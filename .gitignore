@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.pyc
+
+# Jupyter
+.ipynb_checkpoints/
+
+# CSVs intermediarios/descartados (mantidos locais, fora do repo)
+reproducao/resultados/resultados_unsw_nb15old.csv
+reproducao/resultados/resultados_iot23_multi.csv
+reproducao/resultados/tabela_tempos_multi.csv
+
+# Overleaf arrancado e figuras PNG derivadas
+figures/*.png
