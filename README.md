@@ -1,4 +1,4 @@
-﻿# Reduzindo Falsos Negativos na Detecção de Malware IoT
+# Reduzindo Falsos Negativos na Detecção de Malware IoT
 
 **Reducing False Negatives in IoT Malware Detection: A Comparative Study of Generative
 Oversampling on the IoT-23 Dataset** — artigo científico IEEE (IEEEtran, journal), alvo
@@ -9,7 +9,7 @@ Reexecuta os experimentos das aulas 1-8 e gera o pacote Overleaf do manuscrito.
 ## Estrutura
 
 ```
-artigo_iot23/
+artigo_20260914/
 |-- main.tex                  # Artigo final (Spring International IEEEtran) — fonte única
 |-- references.bib
 |-- figures/                  # Figuras PDF (vetoriais) + PNG — geradas por make_figures_v2.py
