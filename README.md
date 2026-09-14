@@ -2,7 +2,7 @@
 
 **Reducing False Negatives in IoT Malware Detection: A Comparative Study of Generative
 Oversampling on the IoT-23 Dataset** â€” artigo cientÃ­fico IEEE (IEEEtran, journal), alvo
-candidato **IEEE Access** / IoT-J.
+candidato **IEEE Internet of Things Journal (IoT-J)**.
 
 Reexecuta os experimentos das aulas 1-8 e gera o pacote Overleaf do manuscrito.
 
