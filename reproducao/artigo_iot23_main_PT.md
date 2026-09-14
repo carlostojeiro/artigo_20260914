@@ -88,7 +88,7 @@ Seis estratégias são aplicadas à divisão de treino antes da classificação.
 
 **CTGAN.** O CTGAN [14] é treinado no conjunto de treino completo usando sua normalização padrão específica de modos: cada característica contínua é decomposta com um modelo de mistura gaussiana variacional, e as características categóricas são codificadas com vetores one-hot mais amostragem condicional por treino-por-amostragem. A rede usa a arquitetura padrão do CTGAN (2 camadas ocultas de 256 unidades) com um discriminador pac ($\mathrm{pacs} = 10$), batch de 200 e 300 épocas. Um total de 17.920 amostras é então gerado condicionado à classe maliciosa.
 
-### 3.3 Classificadores
+### 3.3 Classificadores 
 
 Quatro classificadores são treinados em cada conjunto de treino (possivelmente aumentado) e avaliados no mesmo conjunto de teste.
 
