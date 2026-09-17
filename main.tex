@@ -31,7 +31,7 @@ This paper studies how the class imbalance of real network traffic degrades mach
 \end{abstract}
 
 \begin{IEEEkeywords}
-Internet of Things, intrusion detection, botnet, class imbalance, oversampling, generative adversarial networks, CTGAN, WGAN-GP, false negatives, CICIDS2017, UNSW-NB15, IoT-23.
+Internet of Things, intrusion detection, botnet, class imbalance, oversampling, generative adversarial networks, CTGAN, WGAN-GP, false negatives, Edge-IIoTset, TON\_IoT, IoT-23.
 \end{IEEEkeywords}
 
 \section{Introduction}
@@ -82,14 +82,20 @@ Three gaps motivate our work. First, existing studies compare generative oversam
 \label{sec:method}
 
 \subsection{Datasets and Preprocessing}
-We use three public, real, labeled network-traffic datasets. \textbf{CICIDS2017}~\cite{sharafaldin2018cicids} is a five-day enterprise-network capture (Monday--Friday) with modern attacks performed at controlled times and processed by CICFlowMeter into flow features; its eight daily files are concatenated. \textbf{UNSW-NB15}~\cite{moustafa2015unsw} was generated in the UNSW Canberra Cyber Range with the IXIA PerfectStorm tool, combining normal traffic and modern attacks (Fuzzing, Backdoors, DoS, Exploits, Reconnaissance, Shellcode, Worms) characterized by 45 flow features; we use the official training file. \textbf{IoT-23}~\cite{garcia2020iot23} was captured by the Stratosphere Laboratory and contains benign flows from three real smart-home devices (Philips HUE, Amazon Echo, Somfy doorlock) and malicious flows from multiple botnets (Mirai, Torii, Hajime, Gagfyt, and others); we use a preprocessed mirror of the Zeek \texttt{conn.log} records ($6.05$M flows, 21 columns), kept binary as benign vs.\ malicious.
+% [TROCA DE DATASETS] Metodos/descricoes atualizados para Edge-IIoTset + TON_IoT
+% (IoT/IIoT reais), substituindo UNSW-NB15 e CICIDS2017. Os NUMEROS de
+% resultados (Tabela~\ref{tab:cross}, Tabela~\ref{tab:robust}, Tabela~\ref{tab:cost},
+% abstract, intro, conclusao) permanecem os da execucao anterior (com IoT-23
+% valido) e serao sobrescritos pelos CSVs reais quando a re-execucao no Colab
+% dos notebooks aula_edge_iiotset.ipynb e aula_ton_iot.ipynb retornar.
+We use three public, real, labeled \emph{IoT/IIoT} network-traffic datasets. \textbf{Edge-IIoTset}~\cite{ferrag2022edgeiiotset} was collected on a realistic seven-layer IoT/IIoT testbed (Ferrag et al., IEEE Access 2022) with more than ten sensor/actuator device types and fourteen attack types (e.g., DDoS, MITM, ransomware, backdoor, SQL injection, XSS, and port scanning); the official selected file \texttt{DNN-EdgeIIoT-dataset.csv} provides 61 network-flow features (MQTT, Modbus/TCP, HTTP, TCP/UDP, DNS), a binary \texttt{Attack\_label}, and a multiclass \texttt{Attack\_type}. \textbf{TON\_IoT}~\cite{alsaedi2020toniot} (Alsaedi et al., IEEE Access 2020) was captured at the UNSW Canberra Cyber Range on a medium-scale IoT/IIoT network and contains Zeek/Argus network flows (44 columns: durations, bytes, packets, connection state, and DNS/TLS/HTTP/\texttt{weird} fields) with a binary \texttt{label} and a multiclass \texttt{type}; we use the network-traffic subset. \textbf{IoT-23}~\cite{garcia2020iot23} was captured by the Stratosphere Laboratory and contains benign flows from three real smart-home devices (Philips HUE, Amazon Echo, Somfy doorlock) and malicious flows from multiple botnets (Mirai, Torii, Hajime, Gagfyt, and others); we use a preprocessed mirror of the Zeek \texttt{conn.log} records ($6.05$M flows, 21 columns), kept binary as benign vs.\ malicious.
 
-To make the three datasets directly comparable, each is reduced to an identical workload through stratified sampling. From each full dataset we draw a stratified sample of exactly \textbf{40{,}000 flows with 82\% benign (32{,}800) and 18\% attack (7{,}200)} using a fixed seed (42), which mirrors the imbalance regime of real IoT traffic in which attacks are the minority. The sample is split 70/30 stratified: \textbf{28{,}000 training} flows (22{,}960 benign, 5{,}040 attack) and \textbf{12{,}000 test} flows (9{,}840 benign, 2{,}160 attack), guaranteeing that the test set is identical across all six balancing strategies for a given dataset. Numeric flow features are standardized with \texttt{StandardScaler}, and feature selection is performed with \texttt{SelectPercentile} (ANOVA $f$-classif, 60\%), fitted on the training split only and reused on the test split to avoid any information leak, using scikit-learn~\cite{pedregosa2011sklearn}. For IoT-23 the features are the Zeek \texttt{conn.log} fields (durations, bytes, packets, ports, \texttt{missed\_bytes}); for UNSW-NB15 and CICIDS2017 they are the flow-level features of the respective formats. The pipeline is summarized in Fig.~\ref{fig:pipeline}.
+To make the three datasets directly comparable, each is reduced to an identical workload through stratified sampling. From each full dataset we draw a stratified sample of exactly \textbf{40{,}000 flows with 82\% benign (32{,}800) and 18\% attack (7{,}200)} using a fixed seed (42), which mirrors the imbalance regime of real IoT traffic in which attacks are the minority. The sample is split 70/30 stratified: \textbf{28{,}000 training} flows (22{,}960 benign, 5{,}040 attack) and \textbf{12{,}000 test} flows (9{,}840 benign, 2{,}160 attack), guaranteeing that the test set is identical across all six balancing strategies for a given dataset. Numeric flow features are standardized with \texttt{StandardScaler}, and feature selection is performed with \texttt{SelectPercentile} (ANOVA $f$-classif, 60\%), fitted on the training split only and reused on the test split to avoid any information leak, using scikit-learn~\cite{pedregosa2011sklearn}. For IoT-23 the features are the Zeek \texttt{conn.log} fields (durations, bytes, packets, ports, \texttt{missed\_bytes}); for Edge-IIoTset and TON\_IoT they are the numeric flow-level features retained by the respective parsers. The pipeline is summarized in Fig.~\ref{fig:pipeline}.
 
 \begin{figure}[!t]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig1_pipeline.pdf}
-\caption{Experimental pipeline. For each of the three real datasets (CICIDS2017, UNSW-NB15, IoT-23), 40{,}000 flows (82\% benign / 18\% attack) are preprocessed (\texttt{StandardScaler}, \texttt{SelectPercentile} 60\%) and split 70/30 stratified (seed 42). The training set (28{,}000 flows) is balanced by one of six strategies, each classifier is trained, and evaluation is performed on the fixed test set (12{,}000 flows, 9{,}840 benign / 2{,}160 attack).}
+\caption{Experimental pipeline. For each of the three real datasets (Edge-IIoTset, TON\_IoT, IoT-23), 40{,}000 flows (82\% benign / 18\% attack) are preprocessed (\texttt{StandardScaler}, \texttt{SelectPercentile} 60\%) and split 70/30 stratified (seed 42). The training set (28{,}000 flows) is balanced by one of six strategies, each classifier is trained, and evaluation is performed on the fixed test set (12{,}000 flows, 9{,}840 benign / 2{,}160 attack).}
 \label{fig:pipeline}
 \end{figure}
 
@@ -318,7 +324,7 @@ Table~\ref{tab:related} positions our protocol against recent generative-oversam
 \cite{yang2025cegan} & CE-GAN & NSL-KDD, UNSW-NB15 & Composite loss, game-theoretic ensemble \\
 \cite{swadi2025wcg} & WCGAN & UNSW-NB15, KDD CUP99 & Wasserstein class balancing \\
 \cite{ding2024tmgggan} & TMG-GAN & CICIDS2017, UNSW-NB15 & GAN imbalanced learning \\
-\textbf{Ours} & \textbf{6 strategies} & \textbf{IoT-23, UNSW-NB15, CICIDS2017} & \textbf{Controlled 6-way $\times$ 4-clf FN-focused benchmark} \\
+\textbf{Ours} & \textbf{6 strategies} & \textbf{Edge-IIoTset, TON\_IoT, IoT-23} & \textbf{Controlled 6-way $\times$ 4-clf FN-focused benchmark} \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -354,7 +360,7 @@ We presented a strictly controlled comparison of six balancing strategies---none
 
 These nuances are invisible in accuracy- or F1-only reporting, which motivates the main methodological contribution of this work. Beyond the empirical results, we contribute an evaluation protocol whose central claim is \emph{honesty}: imbalance studies in NIDS should (i) report confusion-matrix counts---especially false negatives, the security-critical error---as first-class metrics, (ii) isolate the balancing effect from the classifier choice by keeping workload, split, feature-selection step, and test set fixed, and (iii) state a-priori a selection rule that refuses a false-negative reduction bought at the price of a collapsed F1. We deliberately do \emph{not} claim that resampling drastically reduces FNs in all settings; the evidence shows the benefit is strongly classifier- and dataset-dependent, and our protocol is explicitly designed so that these nuances are reportable rather than averaged away. Our reproducible template---code, notebooks, and datasets in a public repository---lets any reader re-run the six-strategy, four-classifier comparison on their own data and obtain the confusions we report.
 
-Future work includes (i) extending the benchmark to multiclass per-family detection, to the full IoT-23 capture, and to Edge-IIoTset~\cite{ferrag2022edgeiiotset}; (ii) evaluating train-on-synthetic/test-on-real fidelity metrics and differential-privacy-preserving generation; (iii) combining balancing with focal loss~\cite{dina2023focal} and non-sequential deep detectors (CNNs, transformers) to test whether the LSTM-specific finding generalizes; and (iv) quantifying split-to-split variance through repeated-seed cross-validation.
+Future work includes (i) extending the benchmark to multiclass per-family detection and to the full raw captures of Edge-IIoTset and TON\_IoT~\cite{ferrag2022edgeiiotset,alsaedi2020toniot}; (ii) evaluating train-on-synthetic/test-on-real fidelity metrics and differential-privacy-preserving generation; (iii) combining balancing with focal loss~\cite{dina2023focal} and non-sequential deep detectors (CNNs, transformers) to test whether the LSTM-specific finding generalizes; and (iv) quantifying split-to-split variance through repeated-seed cross-validation.
 
 \bibliographystyle{IEEEtran}
 \bibliography{references}

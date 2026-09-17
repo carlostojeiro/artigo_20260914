@@ -33,20 +33,31 @@ artigo_20260914/
 
 ## Reprodução dos experimentos (Google Colab, ordem)
 
-1. `aula_iot23_cicids2017.ipynb` -> `resultados_cicids2017.csv` (+ `tempos_treino_cicids2017.csv`)
-2. `aula_iot23_unsw_nb15.ipynb` -> `resultados_unsw_nb15.csv` (+ `tempos_treino_unsw_nb15.csv`)
-3. `aula_iot23_real.ipynb` -> `resultados_iot23_real.csv` (+ `tempos_treino_iot23_real.csv`)
+1. `aula_edge_iiotset.ipynb` -> `resultados_edge_iiotset.csv` (+ `tempos_treino_edge_iiotset.csv`
+   + `resultados_oof10_edge_iiotset.csv`)
+2. `aula_ton_iot.ipynb` -> `resultados_ton_iot.csv` (+ `tempos_treino_ton_iot.csv`
+   + `resultados_oof10_ton_iot.csv`)
+3. `aula_iot23_real.ipynb` -> `resultados_iot23_real.csv` (+ `tempos_treino_iot23_real.csv`
+   + `resultados_oof10_iot23_real.csv`)
 4. `aula_iot23_consolidacao.ipynb` -> consolida os 3 datasets (último a rodar)
 
 Cada notebook baixa automaticamente seus CSVs (Colab -> aba Arquivos). Os CSVs de resultados
 vão para `reproducao/resultados/` e os suplementos (tabelas de IC95/sensibilidade/tempos) para
 `reproducao/supplementary/`.
 
+As aulas 6-7 foram **reescopadas para datasets IoT/IIoT reais** (decisão registrada na sessão):
+`aula_iot23_cicids2017.ipynb` e `aula_iot23_unsw_nb15.ipynb` (UNSW-NB15, CICIDS2017 — datasets de
+rede geral, não-IoT) ficam como **legado** e não alimentam mais o manuscrito.
+
 ## Datasets
 
-- **CICIDS2017 / UNSW-NB15:** arquivos públicos (mirror HuggingFace), ~40.000 fluxos amostrados
-  estratificados (82% benigno / 18% ataque, semente 42), split 70/30.
-- **IoT-23:** amostra sintética representativa (notebooks didáticos aulas 1-5), mesma malha de
-  cenários para comparação homogênea.
+- **Edge-IIoTset** (IEEE Access 2022): testbed IoT/IIoT de 7 camadas, 61 features, 14 ataques.
+  Arquivo oficial `DNN-EdgeIIoT-dataset.csv` (2.219.201 x 63) via Kaggle/IEEE DataPort; o
+  notebook baixa com o seu `kaggle.json` (Kaggle CLI) ou aceita upload manual do CSV.
+- **TON_IoT** (IEEE Access 2020, UNSW Canberra): dataset de rede IoT/IIoT (Zeek/Argus) com
+  `label` binário e `type` multiclasse; mirror público no HuggingFace com fallback.
+- **IoT-23** (Stratosphere Lab): flow features do `conn.log` via mirror preprocessado.
+- Todos reduzidos à mesma carga de **40.000 fluxos, 82% benigno / 18% ataque** (semente 42),
+  split 70/30 — protocolo controlado idêntico para comparação direta.
 
 Transparência e limitações documentadas em `main.tex` §"Threats to Validity" e no LEIA-ME.
