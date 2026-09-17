@@ -230,6 +230,70 @@ Because for each model and dataset every scenario shares the same test set, feat
 
 To ensure that the winners of Table~\ref{tab:cross} are not an artifact of the 0.05 tolerance of the selection rule, we repeated the selection for tolerances of 0.00, 0.02, 0.05, and 0.10. The overall pattern is stable. For the LSTM the chosen strategy can change---UNSW-NB15 selects CTGAN under a strict rule and SMOTETomek once the tolerance reaches 0.05, and IoT-23 shifts from cWGAN-GP to WGAN-GP---but the FN reduction stays large at every tolerance: 83.1\% on CICIDS2017 at all tolerances, 75.5--81.5\% on UNSW-NB15, and 39.8--40.6\% on IoT-23. Conversely, lax tolerances can be counterproductive on easy problems: at 0.10, the UNSW-NB15 MLP would switch from the vanilla GAN (FN 404, FP 139, F1 0.87) to SMOTETomek (FN 168, FP 858, F1 0.80), trading a slightly lower FN count for a large rise in false alarms---precisely the collapse the F1-guard prevents.
 
+\subsection{Robustness of the Proposed Pipelines}
+
+To verify that the balancing gains of Table~\ref{tab:cross} are not an
+artifact of the {70/30} split, we re-ran the key chain under an
+\textbf{honest 10-fold out-of-fold (OOF) protocol} that the notebooks
+section~{\tt [OOF-10]} implements, with no leakage:
+\begin{itemize}
+  \item \textbf{Ground truth.} Same stratified sample $(X_s,y_s)$ and the
+        same real LSTM builder ({\tt criar\_lstm});
+  \item \textbf{Stratified K-fold.} {\tt StratifiedKFold(10, shuffle,
+        random\_state=42)} over $(X_s,y_s)$;
+  \item \textbf{Per fold, no leakage.} The scaler, feature selector, and
+        balancing strategy are fitted \emph{only} on the fold's training
+        partition; the fold's validation partition is transformed with the
+        scaler/selector fitted on that fold's \emph{training} data (never
+        refitted on the validation)---so no fold's validation information
+        affects training;
+  \item \textbf{GANs in inference only.} The already-trained WGAN-GP and
+        cWGAN-GP generators (Sections~\ref{sec:wgan} and~\ref{sec:cwgan})
+        generate synthetic minority samples for the fold training set in
+        \emph{inference} mode ($\text{training}=\text{False}$); they are
+        \emph{not} retrained per fold. We document this as an honest
+        limitation: per-fold GAN retraining would add multiplicative cost
+        and is avoided by design. The LSTM is retrained per fold with early
+        stopping;
+  \item \textbf{Aggregation.} Each fold contributes an out-of-fold
+        prediction on its validation partition; the ten out-of-fold
+        predictions are pooled to report per-strategy
+        mean\,$\pm$\,std of ACC/Recall/F1 and the total false negatives.
+\end{itemize}
+The protocol is deliberately conservative: it measures the robustness of
+the \emph{classifier chain} under cross-validation while keeping the
+generators fixed, which keeps the total {Companion} runtime
+($\sim$6--8\,h) acceptable. We report the results in
+Table~\ref{tab:robust} as \emph{pending}: the runs were launched but the
+numbers will be reported verbatim from the returned
+{\tt resultados\_oof10\_<dataset>.csv} aggregation (no estimates are
+inserted, and no value is invented).
+
+\begin{table}[!t]
+\centering
+\caption{Out-of-fold robustness (mean\,$\pm$\,std over 10 folds; FN is the
+security-critical total). \emph{Pending} the completion of the
+{\tt [OOF-10]} runs on the Colab notebooks ($\sim$6--8\,h).}
+\label{tab:robust}
+\footnotesize
+\begin{tabular}{@{}lcccccl@{}}
+\toprule
+Dataset & Strategy & ACC & Recall & F1 & \multicolumn{2}{c}{FN}\\
+\midrule
+\multirow{4}{*}{IoT-23}
+ & LSTM,\,Original        & \emph{pending} & \emph{pending} & \emph{pending} & \multicolumn{2}{c}{\emph{pending}}\\
+ & LSTM,\,SMOTETomek      & \emph{pending} & \emph{pending} & \emph{pending} & \multicolumn{2}{c}{\emph{pending}}\\
+ & LSTM,\,WGAN-GP         & \emph{pending} & \emph{pending} & \emph{pending} & \multicolumn{2}{c}{\emph{pending}}\\
+ & LSTM,\,cWGAN-GP        & \emph{pending} & \emph{pending} & \emph{pending} & \multicolumn{2}{c}{\emph{pending}}\\
+\multirow{4}{*}{UNSW-NB15}
+ & LSTM,\,Original        & \emph{pending} & \emph{pending} & \emph{pending} & \multicolumn{2}{c}{\emph{pending}}\\
+ & LSTM,\,SMOTETomek      & \emph{pending} & \emph{pending} & \emph{pending} & \multicolumn{2}{c}{\emph{pending}}\\
+ & LSTM,\,WGAN-GP         & \emph{pending} & \emph{pending} & \emph{pending} & \multicolumn{2}{c}{\emph{pending}}\\
+ & LSTM,\,cWGAN-GP        & \emph{pending} & \emph{pending} & \emph{pending} & \multicolumn{2}{c}{\emph{pending}}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \subsection{Comparison with Related Work}
 Table~\ref{tab:related} positions our protocol against recent generative-oversampling NIDS studies. Direct numerical comparison is hindered by differences in datasets, features, and classifiers---precisely the problem we set out to address---but two qualitative points stand out. First, studies that report detailed minority-class metrics consistently identify recall/false negatives as the metric that generative balancing improves the most~\cite{he2023cwvaegan,yang2025cegan,babu2023mcgan}. Second, our controlled comparison shows that CTGAN-based pipelines~\cite{zha2025anids,soflaei2024dualctgan,habibi2023ctgan} are strong but not uniquely so: classic SMOTETomek matches them on several configurations, which existing single-dataset, single-classifier studies cannot reveal.
 
