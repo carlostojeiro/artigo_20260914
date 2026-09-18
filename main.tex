@@ -187,14 +187,14 @@ Table~\ref{tab:cross} reports, for each of the three real datasets and four clas
 \toprule
 \textbf{Dataset} & \textbf{Clf} & \textbf{FN (base)} & \textbf{FN (best)} & \textbf{Strategy} & \textbf{FP (best)} & \textbf{$\Delta$FN} & \textbf{F1 (best)} \\
 \midrule
-CICIDS2017 & MLP & 37 & 60 & GAN & 180 & $+62.2\%$ & 0.9459 \\
-CICIDS2017 & XGBoost & 4 & 4 & SMOTETomek & 7 & $0\%$ & 0.9975 \\
-CICIDS2017 & R. Forest & 14 & 7 & SMOTETomek & 3 & $-50.0\%$ & 0.9977 \\
-CICIDS2017 & LSTM & 1{,}716 & 290 & cWGAN-GP & 553 & $-83.1\%$ & 0.8161 \\
-UNSW-NB15 & MLP & 421 & 404 & GAN & 139 & $-4.0\%$ & 0.8661 \\
-UNSW-NB15 & XGBoost & 303 & 253 & SMOTETomek & 224 & $-16.5\%$ & 0.8888 \\
-UNSW-NB15 & R. Forest & 298 & 248 & SMOTETomek & 211 & $-16.8\%$ & 0.8928 \\
-UNSW-NB15 & LSTM & 845 & 156 & SMOTETomek & 1{,}343 & $-81.5\%$ & 0.7278 \\
+Edge-IIoTset & MLP & 327 & 284 & SMOTETomek & 90 & $-13.1\%$ & 0.9094 \\
+Edge-IIoTset & XGBoost & 35 & 0 & SMOTETomek & 64 & $-100\%$ & 0.9854 \\
+Edge-IIoTset & R. Forest & 37 & 0 & SMOTETomek & 66 & $-100\%$ & 0.9850 \\
+Edge-IIoTset & LSTM & 1{,}156 & 993 & WGAN-GP & 151 & $-14.1\%$ & 0.6711 \\
+TON\_IoT & MLP & \emph{pending} & \emph{pending} & \emph{--} & \emph{pending} & \emph{pending} & \emph{pending} \\
+TON\_IoT & XGBoost & \emph{pending} & \emph{pending} & \emph{--} & \emph{pending} & \emph{pending} & \emph{pending} \\
+TON\_IoT & R. Forest & \emph{pending} & \emph{pending} & \emph{--} & \emph{pending} & \emph{pending} & \emph{pending} \\
+TON\_IoT & LSTM & \emph{pending} & \emph{pending} & \emph{--} & \emph{pending} & \emph{pending} & \emph{pending} \\
 IoT-23 & MLP & 636 & 638 & WGAN-GP & 25 & $\approx0\%$ & 0.8211 \\
 IoT-23 & XGBoost & 273 & 272 & SMOTETomek & 25 & $\approx0\%$ & 0.9271 \\
 IoT-23 & R. Forest & 269 & 267 & cWGAN-GP & 134 & $-0.7\%$ & 0.9042 \\
@@ -270,28 +270,34 @@ The protocol is deliberately conservative: it measures the robustness of
 the \emph{classifier chain} under cross-validation while keeping the
 generators fixed, which keeps the total {Companion} runtime
 ($\sim$6--8\,h) acceptable. We report the results in
-Table~\ref{tab:robust} as \emph{pending}: the runs were launched but the
-numbers will be reported verbatim from the returned
+Table~\ref{tab:robust} verbatim from the returned
 {\tt resultados\_oof10\_<dataset>.csv} aggregation (no estimates are
-inserted, and no value is invented).
+inserted, and no value is invented): the Edge-IIoTset round is complete,
+and TON\_IoT and IoT-23 remain \emph{pending} their {\tt [OOF-10]} runs.
 
 \begin{table}[!t]
 \centering
 \caption{Out-of-fold robustness (mean\,$\pm$\,std over 10 folds; FN is the
-security-critical total). \emph{Pending} the completion of the
-{\tt [OOF-10]} runs on the Colab notebooks ($\sim$6--8\,h).}
+security-critical total). Values reported verbatim from
+{\tt resultados\_oof10\_<dataset>.csv} (Edge-IIoTset concluded;
+TON\_IoT and IoT-23 \emph{pending} the remaining {\tt [OOF-10]} runs).}
 \label{tab:robust}
 \footnotesize
 \begin{tabular}{@{}lcccccl@{}}
 \toprule
 Dataset & Strategy & ACC & Recall & F1 & \multicolumn{2}{c}{FN}\\
 \midrule
-\multirow{4}{*}{IoT-23}
+\multirow{4}{*}{Edge-IIoTset}
+ & LSTM,\,Original        & 0.9503$\pm$0.0246 & 0.7896$\pm$0.0442 & 0.8543$\pm$0.0535 & \multicolumn{2}{c}{1{,}515}\\
+ & LSTM,\,SMOTETomek      & 0.9714$\pm$0.0136 & 0.9113$\pm$0.0369 & 0.9201$\pm$0.0372 & \multicolumn{2}{c}{639}\\
+ & LSTM,\,WGAN-GP         & 0.9635$\pm$0.0092 & 0.8235$\pm$0.0296 & 0.8902$\pm$0.0276 & \multicolumn{2}{c}{1{,}271}\\
+ & LSTM,\,cWGAN-GP        & 0.9419$\pm$0.0351 & 0.7533$\pm$0.1315 & 0.8212$\pm$0.1093 & \multicolumn{2}{c}{1{,}776}\\
+\multirow{4}{*}{TON\_IoT}
  & LSTM,\,Original        & \emph{pending} & \emph{pending} & \emph{pending} & \multicolumn{2}{c}{\emph{pending}}\\
  & LSTM,\,SMOTETomek      & \emph{pending} & \emph{pending} & \emph{pending} & \multicolumn{2}{c}{\emph{pending}}\\
  & LSTM,\,WGAN-GP         & \emph{pending} & \emph{pending} & \emph{pending} & \multicolumn{2}{c}{\emph{pending}}\\
  & LSTM,\,cWGAN-GP        & \emph{pending} & \emph{pending} & \emph{pending} & \multicolumn{2}{c}{\emph{pending}}\\
-\multirow{4}{*}{UNSW-NB15}
+\multirow{4}{*}{IoT-23}
  & LSTM,\,Original        & \emph{pending} & \emph{pending} & \emph{pending} & \multicolumn{2}{c}{\emph{pending}}\\
  & LSTM,\,SMOTETomek      & \emph{pending} & \emph{pending} & \emph{pending} & \multicolumn{2}{c}{\emph{pending}}\\
  & LSTM,\,WGAN-GP         & \emph{pending} & \emph{pending} & \emph{pending} & \multicolumn{2}{c}{\emph{pending}}\\
@@ -343,8 +349,8 @@ The balancing overhead is dominated by the generative strategies: training each 
 \toprule
 \textbf{Dataset} & \textbf{GAN} & \textbf{WGAN-GP} & \textbf{cWGAN-GP} & \textbf{CTGAN} \\
 \midrule
-CICIDS2017 & 1008 & 223 & 281 & 450 \\
-UNSW-NB15 & 956 & 224 & 275 & 263 \\
+Edge-IIoTset & 971 & 222 & 273 & 321 \\
+TON\_IoT & \emph{pending} & \emph{pending} & \emph{pending} & \emph{pending} \\
 IoT-23 & 954 & 225 & 263 & 143 \\
 \bottomrule
 \end{tabular}
