@@ -193,18 +193,20 @@ def fig4_fnfptp():
     for a, ds in enumerate(DATASETS):
         ax = axes[a]
         sub = res[res["Dataset"] == ds]
-        YMAX = 2000.0
+        YTICK = 2000.0   # escala visivel (ticks) ate 2000
+        YLIM = 2280.0    # folga extra acima p/ caber o rotulo vertical (~4 digitos)
         for k, mdl in enumerate(modelos):
             fns = [sub[(sub["Modelo"] == mdl) & (sub["Cenario"] == c)]["FN"].iloc[0]
                    for c in cen]
             ax.bar(x + (k - 1.5) * w, fns, w, label=mdl, color=cores[k])
             for xi, v in zip(x + (k - 1.5) * w, fns):
                 if v:
-                    ax.text(xi, v + 0.015 * YMAX, f"{int(v)}", ha="center", va="bottom",
+                    ax.text(xi, v + 0.012 * YTICK, f"{int(v)}", ha="center", va="bottom",
                             fontsize=5.5, rotation=90, color="#222222")
+        ax.set_yticks([0, 500, 1000, 1500, 2000])
         ax.set_xticks(x); ax.set_xticklabels(cen, rotation=60, ha="right", fontsize=6.5)
         ax.set_title(ds, fontsize=8)
-        ax.set_ylim(0, YMAX)
+        ax.set_ylim(0, YLIM)
         if a == 0:
             ax.set_ylabel("False negatives")
         ax.legend(frameon=False, fontsize=6, ncol=2)
