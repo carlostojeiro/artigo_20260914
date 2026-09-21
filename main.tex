@@ -274,7 +274,7 @@ and IoT-23) reported in Table~\ref{tab:robust} are complete; every value is
 taken verbatim from the returned {\tt resultados\_oof10\_<dataset>.csv}
 aggregation (no estimates are inserted, and no value is invented).
 
-\begin{table}[!t]
+\begin{table*}[!t]
 \centering
 \caption{Out-of-fold robustness (mean\,$\pm$\,std over 10 folds; FN is the
 security-critical total). Values reported verbatim from
@@ -282,6 +282,7 @@ security-critical total). Values reported verbatim from
 (no estimates are inserted).}
 \label{tab:robust}
 \footnotesize
+\setlength{\tabcolsep}{5pt}
 \begin{tabular}{@{}lcccccl@{}}
 \toprule
 Dataset & Strategy & ACC & Recall & F1 & \multicolumn{2}{c}{FN}\\
@@ -303,7 +304,7 @@ Dataset & Strategy & ACC & Recall & F1 & \multicolumn{2}{c}{FN}\\
  & LSTM,\,cWGAN-GP        & 0.9532$\pm$0.0135 & 0.7533$\pm$0.0757 & 0.8512$\pm$0.0443 & \multicolumn{2}{c}{1{,}776}\\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 \subsection{Comparison with Related Work}
 Table~\ref{tab:related} positions our protocol against recent generative-oversampling NIDS studies. Direct numerical comparison is hindered by differences in datasets, features, and classifiers---precisely the problem we set out to address---but two qualitative points stand out. First, studies that report detailed minority-class metrics consistently identify recall/false negatives as the metric that generative balancing improves the most~\cite{he2023cwvaegan,yang2025cegan,babu2023mcgan}. Second, our controlled comparison shows that CTGAN-based pipelines~\cite{zha2025anids,soflaei2024dualctgan,habibi2023ctgan} are strong but not uniquely so: classic SMOTETomek matches them on several configurations, which existing single-dataset, single-classifier studies cannot reveal.
