@@ -213,8 +213,49 @@ def fig4_fnfptp():
     fig.suptitle("False negatives per model and balancing strategy (fixed test set)", fontsize=10, y=1.05)
     save(fig, "fig4_fnfptp")
 
+# ------------------------------------------------------------------ FIG 5
+TT = {"GAN": {"Edge-IIoTset": 971, "TON_IoT": 1280, "IoT-23": 953},
+       "WGAN-GP": {"Edge-IIoTset": 222, "TON_IoT": 207, "IoT-23": 211},
+       "cWGAN-GP": {"Edge-IIoTset": 273, "TON_IoT": 253, "IoT-23": 265},
+       "CTGAN": {"Edge-IIoTset": 321, "TON_IoT": 282, "IoT-23": 130}}
+GEN_OF = {"Original (sem balancear)": None, "SMOTETomek": None,
+          "GAN+MLP": "GAN", "WGAN-GP": "WGAN-GP",
+          "cWGAN-GP": "cWGAN-GP", "CTGAN": "CTGAN"}
+CEN5 = list(GEN_OF.keys())
+
+def fig5_fntt():
+    st = {"Original (sem balancear)": ("o", GRAY, 34),
+          "SMOTETomek": ("*", GREEN, 90),
+          "GAN+MLP": ("X", RED, 40),
+          "WGAN-GP": ("o", BLUE, 34),
+          "cWGAN-GP": ("s", ORANGE, 26),
+          "CTGAN": ("^", PURPLE, 30)}
+    fig, axes = plt.subplots(1, 3, figsize=(8.8, 2.7), sharey=False,
+                             gridspec_kw={"wspace": 0.34})
+    for a, ds in enumerate(DATASETS):
+        ax = axes[a]
+        sub = res[(res["Dataset"] == ds) & (res["Modelo"] == "LSTM")]
+        for c in CEN5:
+            fn = int(sub[sub["Cenario"] == c]["FN"].iloc[0])
+            g = GEN_OF[c]
+            tt = TT[g][ds] if g else 0
+            mk, col, s = st[c]
+            ax.scatter(tt, fn, marker=mk, s=s, color=col, edgecolors="#222222", lw=0.5, zorder=3)
+            lab = {"Original (sem balancear)": "Orig", "SMOTETomek": "SMOTE"}.get(c, c)
+            dy = 26 if c == "GAN+MLP" else (10 if c == "Original (sem balancear)" else 8)
+            ax.annotate(lab, (tt, fn), xytext=(6, dy), textcoords="offset points",
+                        fontsize=6, color="#222222")
+        ax.set_xlim(-30, 1360)
+        ax.set_xlabel("TT (s)")
+        ax.set_title(ds, fontsize=8)
+        if a == 0:
+            ax.set_ylabel("LSTM FN (test set)")
+    fig.suptitle("LSTM cost-effectiveness: FN on the test set vs. generator training time", fontsize=9.5, y=1.04)
+    save(fig, "fig5_fntt")
+
 fig1_pipeline()
 fig2_confusion()
 fig3_metrics()
 fig4_fnfptp()
+fig5_fntt()
 print("All figures generated.")

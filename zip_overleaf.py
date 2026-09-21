@@ -4,7 +4,7 @@ base = r"C:\Users\Carlos\Desktop\artigo_20260914"
 dest = os.path.join(base, "overleaf", "artigo_20260914_overleaf.zip")
 arquivos = ["main.tex", "references.bib"]
 figs = [os.path.join("figures", f) for f in sorted(os.listdir(os.path.join(base, "figures")))
-        if f.endswith(".pdf") and "fig5" not in f and "fig6" not in f]
+        if f.endswith(".pdf") and "fig6" not in f]
 arquivos += figs
 supl = [("tabela_ic95.csv", "supplementary/tabela_ic95.csv"),
         ("tabela_sensibilidade.csv", "supplementary/tabela_sensibilidade.csv")]

@@ -5,6 +5,7 @@
 \usepackage{algorithmic}
 \usepackage{graphicx}
 \usepackage{booktabs}
+\usepackage{multirow}
 \usepackage{textcomp}
 \usepackage{xcolor}
 \usepackage{url}
@@ -27,7 +28,7 @@
 \maketitle
 
 \begin{abstract}
-This paper studies how the class imbalance of real network traffic degrades machine-learning-based intrusion detection systems (IDSs). When attacks are rare relative to benign flows, detectors become biased toward the majority class and silently miss malware---a false negative (FN), the costliest error in security. Generative adversarial networks (GANs) are increasingly used to oversample minority attack classes, but most studies report aggregate accuracy or F1-score and rarely quantify the impact of the balancing strategy on the false-negative count or isolate it from the classifier. We compare six balancing strategies---none, SMOTETomek, a vanilla GAN, WGAN-GP, cWGAN-GP, and CTGAN---under a strictly controlled, identical protocol reproduced on three real public IoT/IIoT datasets (Edge-IIoTset, TON\_IoT, and IoT-23) and four classifiers (MLP, XGBoost, Random Forest, and LSTM), sharing the same workload (40{,}000 flows, 82\% benign / 18\% attack), split, feature-selection step, and test set, so that any difference is attributable only to the balancing method. The benefit is strongly classifier-dependent: the LSTM is by far the most degraded by imbalance (unbalanced F1 of 0.18--0.63) and the most improved by resampling, cutting false negatives by 89.9\% on TON\_IoT, 41.3\% on IoT-23, and 14.1\% on Edge-IIoTset; tree ensembles gain at most $\approx$11\% on TON\_IoT and IoT-23 but are fully cleared on Edge-IIoTset, where SMOTETomek removes every residual false negative; and MLP gains are small but consistent ($-$9\% to $-$13\%). No single strategy dominates---classic SMOTETomek is selected best in seven of twelve configurations, followed by WGAN-GP---and the vanilla GAN is the most expensive, making WGAN-GP the cheapest robust generator.
+This paper studies how the class imbalance of real network traffic degrades machine-learning-based intrusion detection systems (IDSs). When attacks are rare relative to benign flows, detectors become biased toward the majority class and silently miss malware---a false negative (FN), the costliest error in security. Generative adversarial networks (GANs) are increasingly used to oversample minority attack classes, but most studies report aggregate accuracy or F1-score and rarely quantify the impact of the balancing strategy on the false-negative count or isolate it from the classifier. We compare six balancing strategies---none, SMOTETomek, a vanilla GAN, WGAN-GP, cWGAN-GP, and CTGAN---under a strictly controlled, identical protocol reproduced on three real public IoT/IIoT datasets (Edge-IIoTset, TON\_IoT, and IoT-23) and four classifiers (MLP, XGBoost, Random Forest, and LSTM), sharing the same workload (40{,}000 flows, 82\% benign / 18\% attack), split, feature-selection step, and test set, so that any difference is attributable only to the balancing method. The benefit is strongly classifier-dependent: the LSTM is by far the most degraded by imbalance (unbalanced F1 of 0.18--0.63) and the most improved by resampling, cutting false negatives by 89.9\% on TON\_IoT, 41.3\% on IoT-23, and 14.1\% on Edge-IIoTset; tree ensembles gain at most $\approx$11\% on TON\_IoT and IoT-23 but are fully cleared on Edge-IIoTset, where SMOTETomek removes every residual false negative; and MLP gains are small but consistent ($-$9\% to $-$13\%). No single strategy dominates---classic SMOTETomek is selected best in seven of twelve configurations, followed by WGAN-GP---and the vanilla GAN is the most expensive, making WGAN-GP the cheapest robust generator. Cost-wise, SMOTETomek removes the most false negatives per minute of computation, and WGAN-GP offers the best generative cost-effectiveness ($\approx$3.5 min per dataset); the vanilla GAN only pays off on the hardest traffic.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -357,12 +358,59 @@ IoT-23 & 953 & 211 & 265 & 130 \\
 \end{center}
 \end{table}
 
+\subsection{Cost-Effectiveness: False-Negative Reduction versus Training Time}
+\label{sec:fntt}
+
+Because the LSTM is the classifier where balancing matters most, Table~\ref{tab:fntt} confronts, per dataset, the false-negative (FN) count of the LSTM in each scenario with the wall-clock time required to produce it (generator training time; SMOTETomek and the no-balancing baseline add negligible overhead). Three patterns hold across all datasets. First, SMOTETomek offers the best cost--benefit: it cuts FNs in seconds ($-$89.9\% on TON\_IoT, $-$41.2\% on IoT-23, $-$12.2\% on Edge-IIoTset) at zero generator cost. Second, among generative methods WGAN-GP is the most efficient, recovering $-$75.5\% (TON\_IoT), $-$41.3\% (IoT-23), and $-$14.1\% (Edge-IIoTset) of the attacks in about 3.5 minutes, closely followed by CTGAN on TON\_IoT ($-$89.1\% in 4.7 minutes). Third, the vanilla GAN achieves the lowest FN on Edge-IIoTset and IoT-23 (716 and 554; reductions of $-$38.1\% and $-$53.4\%) but requires 16--21~minutes---the most expensive generator---and cWGAN-GP is the least cost-effective, even \emph{increasing} FNs on Edge-IIoTset ($1{,}156\rightarrow1{,}445$). In practice, a training-time-constrained operator should start from SMOTETomek; if generative oversampling is required, WGAN-GP offers the best FN-per-minute trade-off, reserving the vanilla GAN for the hardest cases where its extra cost is repaid by the lowest FN count. Fig.~\ref{fig:fntt} visualizes these trade-offs.
+
+\begin{table}[!t]
+\centering
+\caption{LSTM cost--effectiveness per dataset: false negatives (FN on the fixed 12{,}000-flow test set) versus generator training time (TT, in seconds) per balancing scenario. $\Delta$FN is relative to the unbalanced baseline.}
+\label{tab:fntt}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lrcrr@{}}
+\toprule
+Dataset & Scenario & FN & TT (s) & $\Delta$FN \\
+\midrule
+\multirow{6}{*}{Edge-IIoTset}
+ & Original        & 1{,}156  & 0 & --- \\
+ & SMOTETomek      & 1{,}015  & $\approx$0 & $-12.2\%$ \\
+ & GAN             & 716      & 971 & $-38.1\%$ \\
+ & WGAN-GP         & 993      & 222 & $-14.1\%$ \\
+ & cWGAN-GP        & 1{,}445  & 273 & $+25.0\%$ \\
+ & CTGAN           & 1{,}039  & 321 & $-10.1\%$ \\
+\multirow{6}{*}{TON\_IoT}
+ & Original        & 1{,}930  & 0 & --- \\
+ & SMOTETomek      & 194      & $\approx$0 & $-89.9\%$ \\
+ & GAN             & 253      & 1{,}280 & $-86.9\%$ \\
+ & WGAN-GP         & 472      & 207 & $-75.5\%$ \\
+ & cWGAN-GP        & 1{,}611  & 253 & $-16.5\%$ \\
+ & CTGAN           & 211      & 282 & $-89.1\%$ \\
+\multirow{6}{*}{IoT-23}
+ & Original        & 1{,}190  & 0 & --- \\
+ & SMOTETomek      & 700      & $\approx$0 & $-41.2\%$ \\
+ & GAN             & 554      & 953 & $-53.4\%$ \\
+ & WGAN-GP         & 698      & 211 & $-41.3\%$ \\
+ & cWGAN-GP        & 702      & 265 & $-41.0\%$ \\
+ & CTGAN           & 833      & 130 & $-30.0\%$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig5_fntt.pdf}
+\caption{LSTM cost--effectiveness: false negatives on the fixed test set (vertical axis) versus generator training time in seconds (horizontal axis) for each balancing scenario and dataset. SMOTETomek (TT$\approx$0) occupies the top-left effective frontier, followed by the cheap WGAN-GP generator.}
+\label{fig:fntt}
+\end{figure}
+
 \subsection{Threats to Validity}
 Several limitations should be acknowledged. First, all three datasets are real and public, but the IoT-23 subset used here consists of 6.05M Zeek \texttt{conn.log} flows prepared by a third-party preprocessing, which covers a large but not complete portion of the official IoT-23 captures; Edge-IIoTset and TON\_IoT use their official selected/processed distributions (the DNN-EdgeIIoT file distributed through Kaggle/IEEE DataPort and the UNSW network-traffic CSV), and each dataset contributes features of a different parser (Wireshark/Zeek/Argus-style fields), even though the pipeline is identical. Second, results are reported for a single split and seed and without hyperparameter search; the fixed protocol guarantees internal reproducibility, but we do not quantify split-to-split variance. Third, the ``best balanced configuration'' is selected post-hoc by an explicit, a-priori rule (Section~\ref{sec:method}) that guards against precision collapse, yet multiple-testing across six strategies could inflate the chance of selecting a spuriously low FN; we therefore emphasize effect \emph{patterns} across datasets (e.g., the LSTM consistently improving) rather than individual best rows. Fourth, synthetic samples were validated only implicitly, via downstream classification and PCA projections, rather than with formal fidelity tests (e.g., train-on-synthetic/test-on-real, KS statistics). Fifth, our study is restricted to binary classification (benign vs.\ malware); multiclass per-family detection and per-capture analysis of the IoT-23 records remain open. Finally, only four classifier families were considered; modern convolutional and attention-based detectors were not evaluated.
 
 \section{Conclusion and Future Work}
 \label{sec:conclusion}
-We presented a strictly controlled comparison of six balancing strategies---none, SMOTETomek, vanilla GAN, WGAN-GP, cWGAN-GP, and CTGAN---for binary intrusion detection, reproduced identically on three real IoT/IIoT datasets (Edge-IIoTset, TON\_IoT, and IoT-23) and four classifiers (MLP, XGBoost, Random Forest, and LSTM), with a shared workload, split, feature-selection step, and test set. The results show that the benefit of balancing is strongly classifier-dependent. The deep sequential model, which is the most degraded by imbalance (unbalanced F1 of 0.18--0.63 across datasets), is also the most improved, with false negatives reduced by 89.9\% on TON\_IoT ($1{,}930\rightarrow194$), 41.3\% on IoT-23 ($1{,}190\rightarrow698$), and 14.1\% on Edge-IIoTset ($1{,}156\rightarrow993$). Tree ensembles, already strong under imbalance, gain at most $\approx$11\% on TON\_IoT and IoT-23 but are fully cleared on Edge-IIoTset by SMOTETomek (FN$\rightarrow$0); the MLP gains a small but consistent 9--13\%. No single balancing strategy dominates: classic SMOTETomek and the Wasserstein-based WGAN-GP alternate as best across configurations, and CTGAN is consistently close but never uniquely best.
+We presented a strictly controlled comparison of six balancing strategies---none, SMOTETomek, vanilla GAN, WGAN-GP, cWGAN-GP, and CTGAN---for binary intrusion detection, reproduced identically on three real IoT/IIoT datasets (Edge-IIoTset, TON\_IoT, and IoT-23) and four classifiers (MLP, XGBoost, Random Forest, and LSTM), with a shared workload, split, feature-selection step, and test set. The results show that the benefit of balancing is strongly classifier-dependent. The deep sequential model, which is the most degraded by imbalance (unbalanced F1 of 0.18--0.63 across datasets), is also the most improved, with false negatives reduced by 89.9\% on TON\_IoT ($1{,}930\rightarrow194$), 41.3\% on IoT-23 ($1{,}190\rightarrow698$), and 14.1\% on Edge-IIoTset ($1{,}156\rightarrow993$). Tree ensembles, already strong under imbalance, gain at most $\approx$11\% on TON\_IoT and IoT-23 but are fully cleared on Edge-IIoTset by SMOTETomek (FN$\rightarrow$0); the MLP gains a small but consistent 9--13\%. No single balancing strategy dominates: classic SMOTETomek and the Wasserstein-based WGAN-GP alternate as best across configurations, and CTGAN is consistently close but never uniquely best. From a cost-effectiveness standpoint, SMOTETomek is the cheapest way to reduce FNs (seconds per dataset), WGAN-GP is the best generative value ($\approx$3.5 min per dataset), and the vanilla GAN is only justified on the hardest traffic, where its extra cost is repaid by the lowest FN count.
 
 These nuances are invisible in accuracy- or F1-only reporting, which motivates the main methodological contribution of this work. Beyond the empirical results, we contribute an evaluation protocol whose central claim is \emph{honesty}: imbalance studies in NIDS should (i) report confusion-matrix counts---especially false negatives, the security-critical error---as first-class metrics, (ii) isolate the balancing effect from the classifier choice by keeping workload, split, feature-selection step, and test set fixed, and (iii) state a-priori a selection rule that refuses a false-negative reduction bought at the price of a collapsed F1. We deliberately do \emph{not} claim that resampling drastically reduces FNs in all settings; the evidence shows the benefit is strongly classifier- and dataset-dependent, and our protocol is explicitly designed so that these nuances are reportable rather than averaged away. Our reproducible template---code, notebooks, and datasets in a public repository---lets any reader re-run the six-strategy, four-classifier comparison on their own data and obtain the confusions we report.
 
