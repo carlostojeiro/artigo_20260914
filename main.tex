@@ -110,9 +110,11 @@ SMOTETomek~\cite{batista2004smoteenn} first applies SMOTE ($k{=}5$) to synthesiz
 A standard GAN~\cite{goodfellow2014gan} is trained on the minority (attack) samples only. The generator maps 32-dimensional Gaussian noise through three dense layers (64, 128, 256) with batch normalization~\cite{ioffe2015batchnorm}, ReLU, and a \texttt{tanh} output; the discriminator uses two dense layers (256, 128) with dropout (0.3) and a sigmoid output. Training uses binary cross-entropy with Adam~\cite{kingma2015adam} ($2\times10^{-4}$, $\beta_1{=}0.5$), batch size 64, 300 epochs. After training, 17{,}920 samples are drawn from the generator.
 
 \subsubsection{WGAN-GP}
+\label{sec:wgan}
 WGAN-GP~\cite{gulrajani2017wgangp} replaces the discriminator with a critic that outputs a real value (no sigmoid), trained to minimize the Wasserstein distance with gradient-penalty coefficient $\lambda{=}10$ and five critic updates per generator update ($n_{\mathrm{critic}}{=}5$). Architectures and optimizer settings are otherwise identical to the vanilla GAN. This variant isolates the contribution of the Wasserstein loss alone (no class conditioning).
 
 \subsubsection{Conditional WGAN-GP (cWGAN-GP)}
+\label{sec:cwgan}
 cWGAN-GP extends WGAN-GP with class conditioning~\cite{mirza2014cgan,yao2025cwgangp}: both the generator and the critic receive the class label through an embedding layer (2 classes $\rightarrow$ 16 dimensions) concatenated to the input. The model is trained on the complete training set, so that the generator learns both modes, and generation is performed conditioned on the malicious class, producing 17{,}920 samples that respect the conditional distribution.
 
 \subsubsection{CTGAN}
