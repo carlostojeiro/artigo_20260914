@@ -191,10 +191,10 @@ Edge-IIoTset & MLP & 327 & 284 & SMOTETomek & 90 & $-13.1\%$ & 0.9094 \\
 Edge-IIoTset & XGBoost & 35 & 0 & SMOTETomek & 64 & $-100\%$ & 0.9854 \\
 Edge-IIoTset & R. Forest & 37 & 0 & SMOTETomek & 66 & $-100\%$ & 0.9850 \\
 Edge-IIoTset & LSTM & 1{,}156 & 993 & WGAN-GP & 151 & $-14.1\%$ & 0.6711 \\
-TON\_IoT & MLP & \emph{pending} & \emph{pending} & \emph{--} & \emph{pending} & \emph{pending} & \emph{pending} \\
-TON\_IoT & XGBoost & \emph{pending} & \emph{pending} & \emph{--} & \emph{pending} & \emph{pending} & \emph{pending} \\
-TON\_IoT & R. Forest & \emph{pending} & \emph{pending} & \emph{--} & \emph{pending} & \emph{pending} & \emph{pending} \\
-TON\_IoT & LSTM & \emph{pending} & \emph{pending} & \emph{--} & \emph{pending} & \emph{pending} & \emph{pending} \\
+TON\_IoT & MLP & 283 & 258 & GAN & 159 & $-8.8\%$ & 0.9012 \\
+TON\_IoT & XGBoost & 70 & 64 & SMOTETomek & 72 & $-8.6\%$ & 0.9686 \\
+TON\_IoT & R. Forest & 62 & 55 & SMOTETomek & 67 & $-11.3\%$ & 0.9718 \\
+TON\_IoT & LSTM & 1{,}930 & 194 & SMOTETomek & 2{,}933 & $-89.9\%$ & 0.5570 \\
 IoT-23 & MLP & 636 & 638 & WGAN-GP & 25 & $\approx0\%$ & 0.8211 \\
 IoT-23 & XGBoost & 273 & 272 & SMOTETomek & 25 & $\approx0\%$ & 0.9271 \\
 IoT-23 & R. Forest & 269 & 267 & cWGAN-GP & 134 & $-0.7\%$ & 0.9042 \\
@@ -272,15 +272,15 @@ generators fixed, which keeps the total {Companion} runtime
 ($\sim$6--8\,h) acceptable. We report the results in
 Table~\ref{tab:robust} verbatim from the returned
 {\tt resultados\_oof10\_<dataset>.csv} aggregation (no estimates are
-inserted, and no value is invented): the Edge-IIoTset round is complete,
-and TON\_IoT and IoT-23 remain \emph{pending} their {\tt [OOF-10]} runs.
+inserted, and no value is invented): the Edge-IIoTset and TON\_IoT rounds
+are complete, and IoT-23 remains \emph{pending} its {\tt [OOF-10]} run.
 
 \begin{table}[!t]
 \centering
 \caption{Out-of-fold robustness (mean\,$\pm$\,std over 10 folds; FN is the
 security-critical total). Values reported verbatim from
-{\tt resultados\_oof10\_<dataset>.csv} (Edge-IIoTset concluded;
-TON\_IoT and IoT-23 \emph{pending} the remaining {\tt [OOF-10]} runs).}
+{\tt resultados\_oof10\_<dataset>.csv} (Edge-IIoTset and TON\_IoT
+concluded; IoT-23 \emph{pending} the remaining {\tt [OOF-10]} run).}
 \label{tab:robust}
 \footnotesize
 \begin{tabular}{@{}lcccccl@{}}
@@ -293,10 +293,10 @@ Dataset & Strategy & ACC & Recall & F1 & \multicolumn{2}{c}{FN}\\
  & LSTM,\,WGAN-GP         & 0.9635$\pm$0.0092 & 0.8235$\pm$0.0296 & 0.8902$\pm$0.0276 & \multicolumn{2}{c}{1{,}271}\\
  & LSTM,\,cWGAN-GP        & 0.9419$\pm$0.0351 & 0.7533$\pm$0.1315 & 0.8212$\pm$0.1093 & \multicolumn{2}{c}{1{,}776}\\
 \multirow{4}{*}{TON\_IoT}
- & LSTM,\,Original        & \emph{pending} & \emph{pending} & \emph{pending} & \multicolumn{2}{c}{\emph{pending}}\\
- & LSTM,\,SMOTETomek      & \emph{pending} & \emph{pending} & \emph{pending} & \multicolumn{2}{c}{\emph{pending}}\\
- & LSTM,\,WGAN-GP         & \emph{pending} & \emph{pending} & \emph{pending} & \multicolumn{2}{c}{\emph{pending}}\\
- & LSTM,\,cWGAN-GP        & \emph{pending} & \emph{pending} & \emph{pending} & \multicolumn{2}{c}{\emph{pending}}\\
+ & LSTM,\,Original        & 0.8421$\pm$0.0483 & 0.1426$\pm$0.3022 & 0.1576$\pm$0.3344 & \multicolumn{2}{c}{6{,}173}\\
+ & LSTM,\,SMOTETomek      & 0.9679$\pm$0.0037 & 0.9246$\pm$0.0145 & 0.9121$\pm$0.0098 & \multicolumn{2}{c}{543}\\
+ & LSTM,\,WGAN-GP         & 0.9719$\pm$0.0035 & 0.9142$\pm$0.0152 & 0.9214$\pm$0.0101 & \multicolumn{2}{c}{618}\\
+ & LSTM,\,cWGAN-GP        & 0.9631$\pm$0.0185 & 0.8917$\pm$0.0726 & 0.8965$\pm$0.0543 & \multicolumn{2}{c}{780}\\
 \multirow{4}{*}{IoT-23}
  & LSTM,\,Original        & \emph{pending} & \emph{pending} & \emph{pending} & \multicolumn{2}{c}{\emph{pending}}\\
  & LSTM,\,SMOTETomek      & \emph{pending} & \emph{pending} & \emph{pending} & \multicolumn{2}{c}{\emph{pending}}\\
@@ -337,7 +337,7 @@ Table~\ref{tab:related} positions our protocol against recent generative-oversam
 \end{table}
 
 \subsection{Computational Cost}
-The balancing overhead is dominated by the generative strategies: training each generator for 300 epochs was the single most expensive step of every scenario, whereas SMOTETomek (pure resampling) and the classifiers added only seconds. Table~\ref{tab:cost} reports the wall-clock time of the four generator training loops, measured on the same Google Colab GPU profile while executing the notebooks that produced the results of Table~\ref{tab:cross}. The vanilla GAN (Section~\ref{sec:method}), whose generator/discriminator loops run in interpreted Python, is by far the slowest and consumed $\approx$16--17~min per dataset ($\approx$4.5$\times$ the WGAN-GP). The Wasserstein variants converge in 3.7--4.7~min, and CTGAN in 2.4--7.5~min, scaling with the number of minority-class flows. Training all four generators still takes under 33~min per dataset, comfortably within a single Colab session.
+The balancing overhead is dominated by the generative strategies: training each generator for 300 epochs was the single most expensive step of every scenario, whereas SMOTETomek (pure resampling) and the classifiers added only seconds. Table~\ref{tab:cost} reports the wall-clock time of the four generator training loops, measured on the same Google Colab GPU profile while executing the notebooks that produced the results of Table~\ref{tab:cross}. The vanilla GAN (Section~\ref{sec:method}), whose generator/discriminator loops run in interpreted Python, is by far the slowest and consumed $\approx$16--21~min per dataset ($\approx$4--6$\times$ the WGAN-GP). The Wasserstein variants converge in 3.4--4.7~min, and CTGAN in 2.4--5.4~min, scaling with the number of minority-class flows. Training all four generators still takes under $\approx$34~min per dataset, comfortably within a single Colab session.
 
 \begin{table}[!t]
 \caption{Generator Training Time per Dataset (wall-clock seconds, single GPU, 300 epochs)}
@@ -350,7 +350,7 @@ The balancing overhead is dominated by the generative strategies: training each 
 \textbf{Dataset} & \textbf{GAN} & \textbf{WGAN-GP} & \textbf{cWGAN-GP} & \textbf{CTGAN} \\
 \midrule
 Edge-IIoTset & 971 & 222 & 273 & 321 \\
-TON\_IoT & \emph{pending} & \emph{pending} & \emph{pending} & \emph{pending} \\
+TON\_IoT & 1280 & 207 & 253 & 282 \\
 IoT-23 & 954 & 225 & 263 & 143 \\
 \bottomrule
 \end{tabular}
