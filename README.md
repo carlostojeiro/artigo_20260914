@@ -41,6 +41,12 @@ artigo_20260914/
    + `resultados_oof10_iot23_real.csv`)
 4. `aula_iot23_consolidacao.ipynb` -> consolida os 3 datasets (último a rodar)
 
+**Opcional — Tune de GAN (estudo de sensibilidade/custo, NÃO altera a Tabela II):**
+`tune_edge_iiotset.ipynb`, `tune_ton_iot.ipynb` e `tune_iot23_real.ipynb` reusam o download/
+pré-processamento e avaliam cada config com **StratifiedKFold(10) OOF** do LSTM, gerando
+`tune_oof10_<dataset>.csv` (F1/Recall/ACC média±desvio + FN total + TT do gerador).
+Edite `TUNE_GRID` na célula final para controlar o orçamento (para uma passada rápida, 1 config por família).
+
 Cada notebook baixa automaticamente seus CSVs (Colab -> aba Arquivos). Os CSVs de resultados
 vão para `reproducao/resultados/` e os suplementos (tabelas de IC95/sensibilidade/tempos) para
 `reproducao/supplementary/`.
