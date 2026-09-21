@@ -1,13 +1,24 @@
 # -*- coding: utf-8 -*-
-"""Generate the six figures for the IoT-23 oversampling article."""
+"""Regenera as 4 figuras do artigo a partir dos CSVs reais
+(reproducao/resultados/resultados_*.csv) para os 3 datasets:
+Edge-IIoTset, TON_IoT, IoT-23. Saida em figures/ (PDF + PNG).
+"""
+import os, sys
+import numpy as np
+import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-import numpy as np
+
+sys.stdout.reconfigure(encoding="utf-8")
+BASE = r"C:\Users\Carlos\Desktop\artigo_20260914"
+RES  = os.path.join(BASE, "reproducao", "resultados")
+OUT  = os.path.join(BASE, "figures")
+os.makedirs(OUT, exist_ok=True)
 
 plt.rcParams.update({
-    "font.family": "Times New Roman",
+    "font.family": "DejaVu Sans",
     "font.size": 9,
     "axes.labelsize": 10,
     "axes.titlesize": 10,
@@ -17,203 +28,150 @@ plt.rcParams.update({
     "figure.dpi": 300,
 })
 
-import os
-OUT = os.environ.get("FIG_OUT", r"C:\Users\Carlos\Desktop\artigo_iot23\figures")
+BLUE = "#1f5fa8"; RED = "#c0392b"; GRAY = "#7f8c8d"
+GREEN = "#27ae60"; ORANGE = "#e67e22"; PURPLE = "#6a1b9a"
 
-scenarios = ["Original", "SMOTETomek", "GAN+MLP", "WGAN-GP", "cWGAN-GP", "CTGAN"]
-acc  = [0.9363, 0.9688, 0.9825, 0.9877, 0.9906, 0.9925]
-rec  = [0.8438, 0.9329, 0.9572, 0.9722, 0.9803, 0.9850]
-f1   = [0.8266, 0.9148, 0.9517, 0.9661, 0.9741, 0.9793]
-tn   = [3765, 3844, 3889, 3901, 3908, 3913]
-fp   = [171, 92, 47, 35, 28, 23]
-fn   = [135, 58, 37, 24, 17, 13]
-tp   = [729, 806, 827, 840, 847, 851]
+DATASETS = ["Edge-IIoTset", "TON_IoT", "IoT-23"]
+FILES = {"Edge-IIoTset": "resultados_edge_iiotset.csv",
+         "TON_IoT": "resultados_ton_iot.csv",
+         "IoT-23": "resultados_iot23_real.csv"}
 
-BLUE = "#1f5fa8"
-RED  = "#c0392b"
-GRAY = "#7f8c8d"
-GREEN = "#27ae60"
-ORANGE = "#e67e22"
+def load():
+    frames = []
+    for ds, f in FILES.items():
+        df = pd.read_csv(os.path.join(RES, f))
+        df["Dataset"] = ds
+        frames.append(df)
+    return pd.concat(frames, ignore_index=True)
+
+def best_bal(sub):
+    """Menor FN entre os 5 cenarios balanceados com F1 dentro de 0.05 do
+    melhor F1 balanceado (regra do artigo)."""
+    bal = sub[sub["Cenario"] != "Original (sem balancear)"].copy()
+    mf1 = bal["F1-Score"].max()
+    cand = bal[bal["F1-Score"] >= mf1 - 0.05]
+    return cand.sort_values("FN").iloc[0]
 
 def save(fig, name):
-    fig.savefig(f"{OUT}\\{name}.pdf", bbox_inches="tight")
-    fig.savefig(f"{OUT}\\{name}.png", bbox_inches="tight", dpi=300)
+    fig.savefig(os.path.join(OUT, name + ".pdf"), bbox_inches="tight")
+    fig.savefig(os.path.join(OUT, name + ".png"), bbox_inches="tight", dpi=300)
     plt.close(fig)
-    print(f"OK {name}")
+    print("OK", name)
 
-# ---------------------------------------------------------------- FIG 1: pipeline
+res = load()
+
+# ------------------------------------------------------------------ FIG 1
 def fig1_pipeline():
-    fig, ax = plt.subplots(figsize=(7.5, 3.1))
-    ax.axis("off")
-    ax.set_xlim(0, 100); ax.set_ylim(0, 100)
-
-    def box(x, y, w, h, text, fc="#ffffff", ec="#333333", fs=8, lw=1.0, fc2=None):
-        b = mpatches.FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0.4",
-                                    fc=fc, ec=ec, lw=lw)
-        ax.add_patch(b)
-        ax.text(x + w / 2, y + h / 2, text, ha="center", va="center",
-                fontsize=fs, color="#222222")
-
+    fig, ax = plt.subplots(figsize=(7.5, 3.4))
+    ax.axis("off"); ax.set_xlim(0, 100); ax.set_ylim(0, 110)
+    def box(x, y, w, h, text, fc="#eaf2fb", ec="#333333", fs=8):
+        ax.add_patch(mpatches.FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0.4",
+                                             fc=fc, ec=ec, lw=1.0))
+        ax.text(x + w / 2, y + h / 2, text, ha="center", va="center", fontsize=fs)
     def arrow(x1, y1, x2, y2):
         ax.annotate("", xy=(x2, y2), xytext=(x1, y1),
                     arrowprops=dict(arrowstyle="-|>", color="#333333", lw=1.1))
-
-    # row 1: data -> preprocessing -> split
-    box(0.5, 60, 24, 21, "IoT-23\n16,000 samples\n82% benign / 18% malware",
-        fc="#eaf2fb", fs=8)
-    box(27, 60, 32, 21, "Preprocessing\nlabel-encoding, MinMax,\nSelectPercentile(60%) \u2192 12 features",
-        fc="#eaf2fb", fs=8)
-    box(62, 60, 17, 21, "Train/test split\n70/30 stratified\n11,200 / 4,800", fc="#eaf2fb", fs=8)
-    arrow(24.5, 70.5, 27, 70.5); arrow(59, 70.5, 62, 70.5)
-
-    # row 2: six balancing strategies
-    y0, w, h = 30, 14.5, 22
+    box(1, 78, 26, 20, "Three IoT/IIoT datasets\nEdge-IIoTset - TON_IoT - IoT-23\n40,000 flows: 82% benign / 18% attack", fs=8)
+    box(29, 78, 30, 20, "Preprocessing\nStandardScaler + \nSelectPercentile (60%)", fs=8)
+    box(61, 78, 18, 20, "Split 70/30 stratified\n(seed 42)\n28,000 / 12,000", fs=8)
+    arrow(27, 88, 29, 88); arrow(59, 88, 61, 88)
     labels = ["Original\n(no balancing)", "SMOTETomek", "GAN+MLP", "WGAN-GP",
               "cWGAN-GP", "CTGAN"]
+    y0, w, h = 46, 14.8, 20
     for i, lab in enumerate(labels):
-        x = 2 + i * (w + 1.2)
-        box(x, y0, w, h, lab, fc="#fef9e7", ec=GRAY)
-    arrow(70.5, 60, 70.5, 53)
+        box(2 + i * (w + 1.0), y0, w, h, lab, fc="#fef9e7", ec=GRAY)
+    arrow(66, 78, 66, 67)
     for i in range(6):
-        x = 2 + i * (w + 1.2)
-        arrow(64, 52, x + w / 2, y0 + h + 0.5)
-
-    # row 3: MLP -> evaluation
-    box(24, 4, 24, 14, "MLP classifier\n(3 layers, EarlyStopping)",
-        fc="#eafaf1")
-    box(58, 4, 26, 14, "Evaluation on fixed test set\nACC, Recall, F1, TN/FP/FN/TP",
-        fc="#eaf2fb")
+        x = 2 + i * (w + 1.0)
+        arrow(60, 65, x + w / 2, y0 + h + 1)
+    box(26, 8, 22, 15, "MLP / XGBoost /\nRandom Forest / LSTM", fc="#eafaf1")
+    box(56, 8, 28, 15, "Evaluation on fixed test set\nACC, Recall, F1, TN/FP/FN/TP", fc="#eaf2fb")
     for i in range(6):
-        x = 2 + i * (w + 1.2)
-        arrow(x + w / 2, y0 - 0.5, 36, 18.5)
-    arrow(48, 11, 58, 11)
-
-    ax.set_title("Fig. 1 - Methodology pipeline", fontsize=9, loc="left", pad=2)
+        x = 2 + i * (w + 1.0)
+        arrow(x + w / 2, y0 - 1, 37, 23)
+    arrow(48, 15.5, 56, 15.5)
+    ax.set_title("Experimental pipeline", fontsize=9, loc="left", pad=2)
     save(fig, "fig1_pipeline")
 
-# ---------------------------------------------------------------- FIG 2: confusion matrices
+# ------------------------------------------------------------------ FIG 2
 def fig2_confusion():
-    fig, axes = plt.subplots(1, 6, figsize=(7.5, 2.0), gridspec_kw={"hspace": 0.5, "wspace": 0.25})
-    titles = ["(a) Original", "(b) SMOTETomek", "(c) GAN+MLP", "(d) WGAN-GP",
-              "(e) cWGAN-GP", "(f) CTGAN"]
-    data = list(zip(tn, fp, fn, tp))
-    for ax, (t, title) in enumerate(zip(data, titles)):
-        m = np.array([[t[0], t[1]], [t[2], t[3]]])
-        im = axes[ax].imshow(m, cmap="Blues")
-        axes[ax].set_xticks([0, 1]); axes[ax].set_yticks([0, 1])
-        axes[ax].set_xticklabels(["Benign", "Malware"], fontsize=8)
-        axes[ax].set_yticklabels(["Benign", "Malware"], fontsize=8)
-        axes[ax].set_title(title, fontsize=9)
-        for i in range(2):
-            for j in range(2):
-                c = "white" if m[i, j] > 1900 else "black"
-                axes[ax].text(j, i, f"{m[i, j]:,}", ha="center", va="center",
-                              fontsize=9, color=c)
-    axes[0].set_ylabel("Actual", fontsize=9)
-    for axi in range(1, 6):
-        axes[axi].set_yticklabels([])
-    for ax in axes:
-        ax.tick_params(axis="both", which="both", length=0)
-        ax.xaxis.set_ticks_position("bottom")
-    fig.colorbar(im, ax=axes, fraction=0.035, pad=0.02)
+    fig, axes = plt.subplots(3, 2, figsize=(7.5, 5.4),
+                             gridspec_kw={"hspace": 0.45, "wspace": 0.3})
+    letters = iter("abcdef")
+    for r, ds in enumerate(DATASETS):
+        sub = res[(res["Dataset"] == ds) & (res["Modelo"] == "LSTM")]
+        base = sub[sub["Cenario"] == "Original (sem balancear)"].iloc[0]
+        best = best_bal(sub)
+        for c, (row, tag) in enumerate([(base, "Original"), (best, "Best balanced")]):
+            ax = axes[r][c]
+            m = np.array([[row["TN"], row["FP"]], [row["FN"], row["TP"]]])
+            im = ax.imshow(m, cmap="Blues")
+            ax.set_xticks([0, 1]); ax.set_yticks([0, 1])
+            ax.set_xticklabels(["Benign", "Malware"])
+            ax.set_yticklabels(["Benign", "Malware"])
+            ax.set_title(f"({next(letters)}) {ds}: {tag}", fontsize=8)
+            for i in range(2):
+                for j in range(2):
+                    ax.text(j, i, f"{int(m[i, j]):,}", ha="center", va="center",
+                            fontsize=8, color="white" if m[i, j] > 1900 else "black")
+            ax.tick_params(axis="both", which="both", length=0)
+    fig.colorbar(im, ax=axes, fraction=0.025, pad=0.02)
     save(fig, "fig2_confusion")
 
-# ---------------------------------------------------------------- FIG 3: metrics
+# ------------------------------------------------------------------ FIG 3
 def fig3_metrics():
-    x = np.arange(len(scenarios))
-    w = 0.26
-    fig, ax = plt.subplots(figsize=(3.5, 2.3))
-    ax.bar(x - w, acc, w, label="Accuracy", color=BLUE)
-    ax.bar(x, rec, w, label="Recall", color=ORANGE)
-    ax.bar(x + w, f1, w, label="F1-score", color=GREEN)
-    ax.set_xticks(x); ax.set_xticklabels(scenarios, rotation=60, ha="right", fontsize=7)
-    ax.set_ylim(0.8, 1.0)
-    ax.set_ylabel("Score")
-    ax.legend(ncol=3, frameon=False, loc="lower left", bbox_to_anchor=(0, 1.02))
-    for i in range(len(scenarios)):
-        ax.text(i + w, f1[i] + 0.006, f"{f1[i]:.3f}", ha="center", fontsize=7.5, color="#222222")
-    fig.subplots_adjust(top=0.80)
-    ax.grid(axis="y", ls=":", alpha=0.5)
+    cen = ["Original (sem balancear)", "SMOTETomek", "GAN+MLP", "WGAN-GP",
+           "cWGAN-GP", "CTGAN"]
+    modelos = ["MLP", "XGBoost", "RandomForest", "LSTM"]
+    fig, axes = plt.subplots(1, 4, figsize=(8.6, 2.5),
+                             gridspec_kw={"wspace": 0.28})
+    vmin = res["F1-Score"].min(); vmax = 1.0
+    for k, mdl in enumerate(modelos):
+        piv = np.full((3, 6), np.nan)
+        for i, ds in enumerate(DATASETS):
+            for j, c in enumerate(cen):
+                row = res[(res["Dataset"] == ds) & (res["Modelo"] == mdl)
+                          & (res["Cenario"] == c)]
+                if len(row):
+                    piv[i, j] = row["F1-Score"].iloc[0]
+        ax = axes[k]
+        im = ax.imshow(piv, cmap="YlGnBu", vmin=vmin, vmax=vmax)
+        ax.set_xticks(range(6)); ax.set_xticklabels(cen, rotation=60, ha="right", fontsize=6.5)
+        ax.set_yticks(range(3)); ax.set_yticklabels(["Edge", "TON", "IoT-23"], fontsize=7)
+        ax.set_title(mdl, fontsize=8)
+        for i in range(3):
+            for j in range(6):
+                if not np.isnan(piv[i, j]):
+                    ax.text(j, i, f"{piv[i, j]:.3f}", ha="center", va="center", fontsize=6)
+    fig.suptitle("F1-score per dataset, model, and balancing strategy", fontsize=10, y=1.02)
+    fig.colorbar(im, ax=axes, fraction=0.02, pad=0.02)
     save(fig, "fig3_metrics")
 
-# ---------------------------------------------------------------- FIG 4: FN/FP/TP
+# ------------------------------------------------------------------ FIG 4
 def fig4_fnfptp():
-    x = np.arange(len(scenarios))
-    w = 0.26
-    fig, ax = plt.subplots(figsize=(3.5, 2.3))
-    ax.bar(x - w, fn, w, label="FN", color=RED)
-    ax.bar(x, fp, w, label="FP", color=GRAY)
-    ax.bar(x + w, tp, w, label="TP", color=BLUE)
-    ax.set_xticks(x); ax.set_xticklabels(scenarios, rotation=60, ha="right", fontsize=7)
-    ax.set_ylim(0, 1000)
-    ax.set_ylabel("Samples")
-    ax.legend(ncol=3, frameon=False, loc="lower left", bbox_to_anchor=(0, 1.02))
-    for i in range(len(scenarios)):
-        ax.text(i - w, fn[i] + 6, f"{fn[i]}", ha="center", fontsize=7.5, color="#222222")
-    fig.subplots_adjust(top=0.82)
-    ax.grid(axis="y", ls=":", alpha=0.5)
+    cen = ["Original (sem balancear)", "SMOTETomek", "GAN+MLP", "WGAN-GP",
+           "cWGAN-GP", "CTGAN"]
+    modelos = ["MLP", "XGBoost", "RandomForest", "LSTM"]
+    cores = [BLUE, ORANGE, GREEN, PURPLE]
+    fig, axes = plt.subplots(1, 3, figsize=(8.6, 2.6), sharey=True,
+                             gridspec_kw={"wspace": 0.05})
+    x = np.arange(len(cen)); w = 0.2
+    for a, ds in enumerate(DATASETS):
+        ax = axes[a]
+        for k, mdl in enumerate(modelos):
+            fns = [res[(res["Dataset"] == ds) & (res["Modelo"] == mdl)
+                       & (res["Cenario"] == c)]["FN"].iloc[0] for c in cen]
+            ax.bar(x + (k - 1.5) * w, fns, w, label=mdl, color=cores[k])
+        ax.set_xticks(x); ax.set_xticklabels(cen, rotation=60, ha="right", fontsize=6.5)
+        ax.set_title(ds, fontsize=8)
+        if a == 0:
+            ax.set_ylabel("False negatives")
+        ax.legend(frameon=False, fontsize=6, ncol=2)
+    fig.suptitle("False negatives per model and balancing strategy (fixed test set)", fontsize=10, y=1.04)
     save(fig, "fig4_fnfptp")
-
-# ---------------------------------------------------------------- FIG 5: training curves
-def fig5_training():
-    epochs = [50, 100, 150, 200, 250, 300]
-    wgan_w = [0.4312, 0.1522, 0.0871, 0.0584, 0.0462, 0.0398]
-    cwgan_w = [0.4288, 0.1509, 0.0862, 0.0571, 0.0449, 0.0376]
-    gan_d = [0.6929, 0.5983, 0.3877, 0.1746, 0.0982, 0.0781]
-    gan_g = [0.6934, 0.6310, 0.6022, 0.9145, 1.3874, 1.7821]
-
-    fig, axes = plt.subplots(1, 2, figsize=(7.5, 2.2))
-    axes[0].plot(epochs, wgan_w, "-o", ms=3, color=BLUE, label="WGAN-GP")
-    axes[0].plot(epochs, cwgan_w, "-s", ms=3, color=ORANGE, label="cWGAN-GP")
-    axes[0].set_xlabel("Epoch"); axes[0].set_ylabel("Wasserstein distance")
-    axes[0].legend(frameon=False)
-    axes[0].grid(ls=":", alpha=0.5)
-    axes[0].set_title("(a) Critic convergence", fontsize=8)
-
-    ax2 = axes[1]
-    ax2.plot(epochs, gan_d, "-o", ms=3, color=BLUE, label="D loss")
-    ax2.plot(epochs, gan_g, "-s", ms=3, color=RED, label="G loss")
-    ax2.set_xlabel("Epoch"); ax2.set_ylabel("Loss")
-    ax2.legend(frameon=False)
-    ax2.grid(ls=":", alpha=0.5)
-    ax2.set_title("(b) Vanilla GAN (MNIST-style loss)", fontsize=8)
-    save(fig, "fig5_training")
-
-# ---------------------------------------------------------------- FIG 6: PCA
-def fig6_pca():
-    rng = np.random.default_rng(42)
-    n = 2000
-    def cluster(center, sigma, n):
-        return rng.normal(center, sigma, size=(n, 12))
-    benign = cluster(np.full(12, 0.35), 0.12, n)
-    real_mal = cluster(np.full(12, 0.62), 0.13, n)
-    syn_mal = cluster(np.full(12, 0.60), 0.11, n) + rng.normal(0, 0.03, (n, 12))
-
-    def pca2(X):
-        mu = X.mean(0)
-        C = (X - mu).T @ (X - mu) / len(X)
-        evals, evecs = np.linalg.eigh(C)
-        idx = np.argsort(evals)[::-1][:2]
-        return (X - mu) @ evecs[:, idx]
-
-    p_ben = pca2(benign)
-    p_real = pca2(real_mal)
-    p_syn = pca2(syn_mal)
-
-    fig, ax = plt.subplots(figsize=(3.5, 2.4))
-    ax.scatter(p_ben[:, 0], p_ben[:, 1], s=4, alpha=0.5, color=BLUE, label="Real benign")
-    ax.scatter(p_real[:, 0], p_real[:, 1], s=4, alpha=0.5, color=RED, label="Real malware")
-    ax.scatter(p_syn[:, 0], p_syn[:, 1], s=4, alpha=0.45, marker="^",
-               color=GREEN, label="CTGAN synthetic")
-    ax.set_xlabel("PC1"); ax.set_ylabel("PC2")
-    ax.legend(frameon=False, markerscale=1.5)
-    ax.set_xticks([]); ax.set_yticks([])
-    save(fig, "fig6_pca")
 
 fig1_pipeline()
 fig2_confusion()
 fig3_metrics()
 fig4_fnfptp()
-fig5_training()
-fig6_pca()
 print("All figures generated.")
