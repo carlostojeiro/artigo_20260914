@@ -150,7 +150,8 @@ def fig3_metrics():
     cen = ["Original (sem balancear)", "SMOTETomek", "GAN+MLP", "WGAN-GP",
            "cWGAN-GP", "CTGAN"]
     modelos = ["MLP", "XGBoost", "RandomForest", "LSTM"]
-    vmin, vmax = 0.40, 1.0
+    vmin, vmax = 0.35, 1.0
+    _norm = plt.Normalize(vmin, vmax)
     fig, axes = plt.subplots(1, 4, figsize=(8.8, 2.7),
                              gridspec_kw={"wspace": 0.32})
     for k, mdl in enumerate(modelos):
@@ -171,8 +172,9 @@ def fig3_metrics():
                 v = piv[i, j]
                 if np.isnan(v):
                     continue
-                norm = (v - vmin) / (vmax - vmin)
-                fg = "white" if norm < 0.45 else "#111111"
+                rgba = plt.cm.YlGnBu(_norm(v))
+                lum = 0.299 * rgba[0] + 0.587 * rgba[1] + 0.114 * rgba[2]
+                fg = "black" if lum > 0.55 else "white"
                 ax.text(j, i, f"{v:.3f}", ha="center", va="center", fontsize=6.5, color=fg)
     fig.suptitle("F1-score per dataset, model, and balancing strategy", fontsize=10, y=1.04)
     fig.colorbar(im, ax=axes, fraction=0.02, pad=0.02)
@@ -190,16 +192,18 @@ def fig4_fnfptp():
     for a, ds in enumerate(DATASETS):
         ax = axes[a]
         sub = res[res["Dataset"] == ds]
+        xmax = float(max(res[res['Dataset'] == ds]['FN']))
         for k, mdl in enumerate(modelos):
             fns = [sub[(sub["Modelo"] == mdl) & (sub["Cenario"] == c)]["FN"].iloc[0]
                    for c in cen]
             ax.bar(x + (k - 1.5) * w, fns, w, label=mdl, color=cores[k])
             for xi, v in zip(x + (k - 1.5) * w, fns):
-                if v and v < 0.7 * max(max(fns), 1):
-                    ax.text(xi, v + 4, f"{int(v)}", ha="center", fontsize=5.5, color="#222222")
+                if v and v < 0.78 * xmax:
+                    ax.text(xi, v + 0.015 * xmax, f"{int(v)}", ha="center", fontsize=5.5,
+                            color="#222222")
         ax.set_xticks(x); ax.set_xticklabels(cen, rotation=60, ha="right", fontsize=6.5)
         ax.set_title(ds, fontsize=8)
-        ax.set_ylim(0, max(max(res[res['Dataset'] == ds]['FN']), 1) * 1.08)
+        ax.set_ylim(0, xmax * 1.15)
         if a == 0:
             ax.set_ylabel("False negatives")
         ax.legend(frameon=False, fontsize=6, ncol=2)
