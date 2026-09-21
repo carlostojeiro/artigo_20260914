@@ -175,7 +175,8 @@ def fig3_metrics():
                 rgba = plt.cm.YlGnBu(_norm(v))
                 lum = 0.299 * rgba[0] + 0.587 * rgba[1] + 0.114 * rgba[2]
                 fg = "black" if lum > 0.55 else "white"
-                ax.text(j, i, f"{v:.3f}", ha="center", va="center", fontsize=6.5, color=fg)
+                ax.text(j, i, f"{v:.3f}", ha="center", va="center",
+                        fontsize=6, color=fg, rotation=90)
     fig.suptitle("F1-score per dataset, model, and balancing strategy", fontsize=10, y=1.04)
     fig.colorbar(im, ax=axes, fraction=0.02, pad=0.02)
     save(fig, "fig3_metrics")
@@ -198,12 +199,12 @@ def fig4_fnfptp():
                    for c in cen]
             ax.bar(x + (k - 1.5) * w, fns, w, label=mdl, color=cores[k])
             for xi, v in zip(x + (k - 1.5) * w, fns):
-                if v and v < 0.78 * xmax:
-                    ax.text(xi, v + 0.015 * xmax, f"{int(v)}", ha="center", fontsize=5.5,
-                            color="#222222")
+                if v:
+                    ax.text(xi, v + 0.022 * xmax, f"{int(v)}", ha="center", va="bottom",
+                            fontsize=5.5, rotation=90, color="#222222")
         ax.set_xticks(x); ax.set_xticklabels(cen, rotation=60, ha="right", fontsize=6.5)
         ax.set_title(ds, fontsize=8)
-        ax.set_ylim(0, xmax * 1.15)
+        ax.set_ylim(0, xmax * 1.26)
         if a == 0:
             ax.set_ylabel("False negatives")
         ax.legend(frameon=False, fontsize=6, ncol=2)
