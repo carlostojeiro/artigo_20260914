@@ -1,0 +1,41 @@
+% Tabela TUNE — sensibilidade de hiperparametros das GANs (OOF-10, LSTM)
+% Protocolo: StratifiedKFold(10) out-of-fold; LSTM com ate 300 epocas.
+% FN = total (soma das 10 dobras); TT(s) = tempo de treino do gerador.
+% Preencher TON_IoT e IoT-23 apos os tune_oof10_*.csv retornarem.
+% (tabela a inserir em main.tex, ex.: apos a Tabela de custo-beneficio FN x TT)
+\begin{table}[!t]
+\centering
+\caption{Tune of the GAN hyperparameters (LSTM under the honest 10-fold OOF protocol): F1 (mean\,$\pm$\,std over 10 folds), total false negatives (FN) and generator training time (TT) per configuration and dataset. Baseline and SMOTETomek are shown as references; the fixed-protocol results of Table~\ref{tab:cross} are unchanged.}
+\label{tab:tune}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}llrrr@{}}
+\toprule
+Dataset & Strategy (config) & TT (s) & F1 & FN \\
+\midrule
+\multirow{6}{*}{Edge-IIoTset}
+ & Original             & 0      & 0.8499$\pm$0.0703 & 1{,}741 \\
+ & SMOTETomek           & $\approx$0 & 0.9459$\pm$0.0280 & 498 \\
+ & GAN (e300\_b64)      & 1{,}342 & 0.9093$\pm$0.0345 & 1{,}030 \\
+ & WGAN-GP (e300\_b64)  & 269    & 0.9150$\pm$0.0319 & 1{,}050 \\
+ & cWGAN-GP (e300\_b64) & 284    & 0.8865$\pm$0.0769 & 1{,}333 \\
+ & CTGAN (e300\_b200)   & 623    & 0.9091$\pm$0.0297 & 1{,}150 \\
+\multirow{6}{*}{TON\_IoT}
+ & Original             & \emph{pending} & \emph{pending} & \emph{pending} \\
+ & SMOTETomek           & \emph{pending} & \emph{pending} & \emph{pending} \\
+ & GAN                  & \emph{pending} & \emph{pending} & \emph{pending} \\
+ & WGAN-GP              & \emph{pending} & \emph{pending} & \emph{pending} \\
+ & cWGAN-GP             & \emph{pending} & \emph{pending} & \emph{pending} \\
+ & CTGAN                & \emph{pending} & \emph{pending} & \emph{pending} \\
+\multirow{6}{*}{IoT-23}
+ & Original             & \emph{pending} & \emph{pending} & \emph{pending} \\
+ & SMOTETomek           & \emph{pending} & \emph{pending} & \emph{pending} \\
+ & GAN                  & \emph{pending} & \emph{pending} & \emph{pending} \\
+ & WGAN-GP              & \emph{pending} & \emph{pending} & \emph{pending} \\
+ & cWGAN-GP             & \emph{pending} & \emph{pending} & \emph{pending} \\
+ & CTGAN                & \emph{pending} & \emph{pending} & \emph{pending} \\
+\bottomrule
+\end{tabular}
+\end{table}
+% Proxima figura (quando os 3 CSVs chegarem): fig6_tune = FN x TT por config
+% (3 paineis por dataset), estendendo a Fig. 5; incluir fig6 no zip_overleaf.
