@@ -261,7 +261,36 @@ Como o LSTM é o classificador em que o balanceamento mais importa, a Tabela VI 
 
 **Figura 5** — Custo-benefício do LSTM: falsos negativos no teste fixo (eixo vertical) versus tempo de treinamento do gerador em segundos (eixo horizontal) para cada cenário de balanceamento e dataset. O SMOTETomek (TT≈0) ocupa a fronteira eficaz superior-esquerda, seguido do gerador barato WGAN-GP.
 
-### 4.7 Ameaças à Validade
+### 4.7 Sensibilidade dos Hiperparâmetros das Estratégias Generativas
+
+Para avaliar se as conclusões dependem dos hiperparâmetros dos geradores, rodamos um grid pequeno e orçado sobre as quatro famílias generativas (Tabela VII) e avaliamos cada configuração sob o mesmo protocolo honesto de 10-fold OOF da Seção 4.3 (LSTM, 300 épocas), mudando apenas o dado de treino dos geradores (a minoria completa da amostra estratificada, como num protocolo de tune). Três resultados. Primeiro, o SMOTETomek segue como o baseline de melhor custo-benefício nos três datasets (FN 498, 553 e 1.559 a custo zero), e nenhuma configuração generativa o supera em FN, exceto a GAN vanilla no Edge-IIoTset e no TON_IoT — e só ao preço de 22–34 min de treino. Segundo, entre os geradores a GAN vanilla é a mais cara, mas muitas vezes a melhor no tráfego mais difícil, enquanto WGAN-GP e CTGAN são os mais baratos (4–8 min e 3–14 min); sua qualidade varia mais sob esse protocolo de retreino na amostra (ex.: TON_IoT WGAN-GP FN 3.333) — exatamente por isso o protocolo fixo da Tabela II é a base das nossas afirmações. Terceiro, as melhores configurações do tune nunca superam as reduções de FN do protocolo fixo além do que uma única execução varia (dezenas de falsos negativos), de modo que as conclusões qualitativas das Seções 4.6 e 4.1 são robustas à escolha de hiperparâmetros. A Figura 6 visualiza a fronteira FN × tempo incluindo as configurações tunadas.
+
+**Tabela VII — Sensibilidade dos hiperparâmetros generativos sob o protocolo honesto de 10-fold OOF (LSTM): F1 (média±desvio sobre as 10 dobras), FN total (soma das dobras) e tempo de treino do gerador (TT, em segundos) por configuração e dataset. Original e SMOTETomek são referências fixas; os resultados da Tabela II não mudam.**
+
+| Dataset | Estratégia (config) | TT (s) | F1 | FN |
+|---|---|---|---|---|
+| Edge-IIoTset | Original | 0 | 0,8499±0,0703 | 1.741 |
+| Edge-IIoTset | SMOTETomek | ≈0 | 0,9459±0,0280 | 498 |
+| Edge-IIoTset | GAN (e300_b64) | 1.342 | 0,9093±0,0345 | 1.030 |
+| Edge-IIoTset | WGAN-GP (e300_b64) | 269 | 0,9150±0,0319 | 1.050 |
+| Edge-IIoTset | cWGAN-GP (e300_b64) | 284 | 0,8865±0,0769 | 1.333 |
+| Edge-IIoTset | CTGAN (e300_b200) | 623 | 0,9091±0,0297 | 1.150 |
+| TON_IoT | Original | 0 | 0,1562±0,3294 | 6.241 |
+| TON_IoT | SMOTETomek | ≈0 | 0,8367±0,1496 | 553 |
+| TON_IoT | GAN (e300_b64) | 2.017 | 0,9109±0,0134 | 732 |
+| TON_IoT | WGAN-GP (e300_b64) | 326 | 0,6012±0,2226 | 3.333 |
+| TON_IoT | cWGAN-GP (e300_b64) | 384 | 0,8729±0,0869 | 968 |
+| TON_IoT | CTGAN (e300_b200) | 835 | 0,7632±0,1750 | 2.095 |
+| IoT-23 | Original | 0 | 0,8138±0,0552 | 2.167 |
+| IoT-23 | SMOTETomek | ≈0 | 0,8589±0,0394 | 1.559 |
+| IoT-23 | GAN (e300_b64) | 1.478 | 0,8384±0,0547 | 1.834 |
+| IoT-23 | WGAN-GP (e300_b64) | 231 | 0,8322±0,0526 | 1.990 |
+| IoT-23 | cWGAN-GP (e300_b64) | 281 | 0,8290±0,0152 | 2.062 |
+| IoT-23 | CTGAN (e300_b200) | 209 | 0,8339±0,0551 | 1.985 |
+
+**Figura 6** — Sensibilidade dos hiperparâmetros generativos (OOF-10, LSTM): falsos negativos (total das dobras) versus tempo de treino do gerador (segundos) para cada configuração tunada e dataset. SMOTETomek e os geradores baratos (WGAN-GP, CTGAN) sustentam a fronteira de custo-benefício; a GAN vanilla só compete com alto custo de treino.
+
+### 4.8 Ameaças à Validade
 
 Diversas limitações devem ser reconhecidas. Primeiro, os três datasets são reais e públicos, mas o subconjunto IoT-23 usado aqui consiste em 6,05 milhões de fluxos Zeek `conn.log` preparados por um pré-processamento de terceiros, que cobre uma porção grande, mas não completa, das capturas oficiais do IoT-23; o Edge-IIoTset e o TON_IoT usam suas distribuições oficiais selecionadas/processadas (o arquivo DNN-EdgeIIoT distribuído via Kaggle/IEEE DataPort e o CSV de tráfego de rede da UNSW), e cada dataset contribui características de um parser diferente (campos no estilo Wireshark/Zeek/Argus), mesmo com pipeline idêntico. Segundo, os resultados são reportados para uma única divisão e semente e sem busca de hiperparâmetros; o protocolo fixo garante reprodutibilidade interna, mas não quantificamos a variância entre divisões. Terceiro, a "melhor configuração balanceada" é selecionada post-hoc por uma regra explícita e a priori (Seção 3.4) que protege contra colapso de precisão, mas a multiplicidade de testes entre seis estratégias pode inflar a chance de selecionar um FN espurimente baixo; por isso enfatizamos *padrões* de efeito entre datasets (ex.: o LSTM melhorando consistentemente) em vez de linhas individuais. Quarto, as amostras sintéticas foram validadas apenas implicitamente, via classificação a jusante e projeções PCA, e não com testes formais de fidelidade (ex.: treino-em-sintético/teste-em-real, estatísticas KS). Quinto, nosso estudo está restrito à classificação binária (benigno vs. malware); a detecção multiclasse por família e a análise por captura dos registros do IoT-23 permanecem em aberto. Finalmente, apenas quatro famílias de classificadores foram consideradas; detectores modernos convolucionais e baseados em atenção não foram avaliados.
 

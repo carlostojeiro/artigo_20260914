@@ -253,9 +253,41 @@ def fig5_fntt():
     fig.suptitle("LSTM cost-effectiveness: FN on the test set vs. generator training time", fontsize=9.5, y=1.04)
     save(fig, "fig5_fntt")
 
+# ------------------------------------------------------------------ FIG 6
+TUNE_FILES = {"Edge-IIoTset": "tune_oof10_edge_iiotset.csv",
+              "TON_IoT": "tune_oof10_ton_iot.csv",
+              "IoT-23": "tune_oof10_iot23_real.csv"}
+
+def fig6_tune():
+    st = {"Original": ("o", GRAY, 30), "SMOTETomek": ("*", GREEN, 90),
+          "GAN": ("X", RED, 40), "WGAN-GP": ("o", BLUE, 30),
+          "cWGAN-GP": ("s", ORANGE, 26), "CTGAN": ("^", PURPLE, 30)}
+    fig, axes = plt.subplots(1, 3, figsize=(8.8, 2.7), sharey=False,
+                             gridspec_kw={"wspace": 0.34})
+    for a, (ds, f) in enumerate(TUNE_FILES.items()):
+        ax = axes[a]
+        d = pd.read_csv(os.path.join(RES, f))
+        sub_ok = d.dropna(subset=["FN"])
+        ymax = float(sub_ok["FN"].max()) * 1.12
+        for _, r in sub_ok.iterrows():
+            fam = r["Familia"]; tt = float(r["TT_s"]); fn = float(r["FN"])
+            mk, col, s = st[fam]
+            ax.scatter(tt, fn, marker=mk, s=s, color=col, edgecolors="#222222", lw=0.5, zorder=3)
+            lab = {"Original": "Orig", "SMOTETomek": "SMOTE"}.get(fam, fam)
+            ax.annotate(lab, (tt, fn), xytext=(6, 6), textcoords="offset points",
+                        fontsize=6, color="#222222")
+        ax.set_xlim(-30, 2100); ax.set_ylim(0, ymax)
+        ax.set_xlabel("TT (s)")
+        ax.set_title(ds, fontsize=8)
+        if a == 0:
+            ax.set_ylabel("LSTM FN (OOF, total)")
+    fig.suptitle("Generative hyperparameter sensitivity (10-fold OOF, LSTM)", fontsize=9.5, y=1.04)
+    save(fig, "fig6_tune")
+
 fig1_pipeline()
 fig2_confusion()
 fig3_metrics()
 fig4_fnfptp()
 fig5_fntt()
+fig6_tune()
 print("All figures generated.")

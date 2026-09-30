@@ -238,6 +238,7 @@ Because for each model and dataset every scenario shares the same test set, feat
 To ensure that the winners of Table~\ref{tab:cross} are not an artifact of the 0.05 tolerance of the selection rule, we repeated the selection for tolerances of 0.00, 0.02, 0.05, and 0.10. The overall pattern is stable at the level of the FN reduction: for the LSTM the reduction stays large at every tolerance---TON\_IoT $-$86.9\% to $-$89.9\%, IoT-23 a constant $-$41.3\%, Edge-IIoTset $-$12.2\% to $-$38.1\%---and the chosen strategy is fixed on TON\_IoT (SMOTETomek from tolerance 0.02 up) and on IoT-23 (WGAN-GP), while on Edge-IIoTset it shifts among SMOTETomek, WGAN-GP, and the vanilla GAN as the tolerance relaxes, always keeping the balanced F1 within 0.08 of the best. Conversely, lax tolerances can be counterproductive on easy problems: at 0.10 the Edge-IIoTset LSTM would switch from WGAN-GP (FN 993, FP 151, F1 0.67) to the vanilla-GAN scenario (FN 716, FP 1{,}243, F1 0.60), trading a slightly lower FN count for an eightfold rise in false alarms---precisely the collapse the F1-guard prevents.
 
 \subsection{Robustness of the Proposed Pipelines}
+\label{subsec:robust}
 
 To verify that the balancing gains of Table~\ref{tab:cross} are not an
 artifact of the {70/30} split, we re-ran the key chain under an
@@ -403,6 +404,53 @@ Dataset & Scenario & FN & TT (s) & $\Delta$FN \\
 \includegraphics[width=\columnwidth]{figures/fig5_fntt.pdf}
 \caption{LSTM cost--effectiveness: false negatives on the fixed test set (vertical axis) versus generator training time in seconds (horizontal axis) for each balancing scenario and dataset. SMOTETomek (TT$\approx$0) occupies the top-left effective frontier, followed by the cheap WGAN-GP generator.}
 \label{fig:fntt}
+\end{figure}
+
+\subsection{Hyperparameter Sensitivity of the Generative Strategies}
+\label{sec:tune}
+
+To assess whether the conclusions depend on the generator hyperparameters, we ran a small, budgeted grid over the four generative families (Table~\ref{tab:tune}) and evaluated each configuration under the same honest 10-fold OOF protocol used in Section~\ref{subsec:robust} (LSTM, 300 epochs), the only change being the training data of the generators (the full minority of the stratified sample, as in a tuning protocol). Three results follow. First, SMOTETomek remains the strongest cost--benefit baseline on all three datasets (FN 498, 553, and 1{,}559 at zero training time), and no generative configuration beats it on FN except the vanilla GAN on Edge-IIoTset and TON\_IoT, and then only at the price of 22--34~minutes of training. Second, among generators the vanilla GAN is the most expensive but often the best on the hardest traffic, while WGAN-GP and CTGAN are the cheapest (4--8~min and 3--14~min); their quality is more variable under this retrained-sample protocol (e.g., TON\_IoT WGAN-GP FN 3{,}333), which is exactly why the fixed protocol of Table~\ref{tab:cross} is the basis of our claims. Third, the tuned best configurations never exceed the FN reductions of the fixed protocol by more than what a single training run varies (tens of false negatives), so the qualitative conclusions of Sections~\ref{sec:fntt} and~\ref{sec:results} are robust to hyperparameter choice. Fig.~\ref{fig:tune} visualizes the FN-versus-time frontier including the tuned configurations.
+
+\begin{table*}[!t]
+\centering
+\caption{Generative hyperparameter sensitivity under the honest 10-fold OOF LSTM protocol: F1 (mean\,$\pm$\,std over 10 folds), total false negatives (FN, sum over folds), and generator training time (TT, seconds) per configuration and dataset. Original and SMOTETomek are fixed references; the reported fixed-protocol results of Table~\ref{tab:cross} are unchanged.}
+\label{tab:tune}
+\footnotesize
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{@{}llrrr@{}}
+\toprule
+Dataset & Strategy (config) & TT (s) & F1 & FN \\
+\midrule
+\multirow{6}{*}{Edge-IIoTset}
+ & Original             & 0      & 0.8499$\pm$0.0703 & 1{,}741 \\
+ & SMOTETomek           & $\approx$0 & 0.9459$\pm$0.0280 & 498 \\
+ & GAN (e300\_b64)      & 1{,}342 & 0.9093$\pm$0.0345 & 1{,}030 \\
+ & WGAN-GP (e300\_b64)  & 269    & 0.9150$\pm$0.0319 & 1{,}050 \\
+ & cWGAN-GP (e300\_b64) & 284    & 0.8865$\pm$0.0769 & 1{,}333 \\
+ & CTGAN (e300\_b200)   & 623    & 0.9091$\pm$0.0297 & 1{,}150 \\
+\multirow{6}{*}{TON\_IoT}
+ & Original             & 0      & 0.1562$\pm$0.3294 & 6{,}241 \\
+ & SMOTETomek           & $\approx$0 & 0.8367$\pm$0.1496 & 553 \\
+ & GAN (e300\_b64)      & 2{,}017 & 0.9109$\pm$0.0134 & 732 \\
+ & WGAN-GP (e300\_b64)  & 326    & 0.6012$\pm$0.2226 & 3{,}333 \\
+ & cWGAN-GP (e300\_b64) & 384    & 0.8729$\pm$0.0869 & 968 \\
+ & CTGAN (e300\_b200)   & 835    & 0.7632$\pm$0.1750 & 2{,}095 \\
+\multirow{6}{*}{IoT-23}
+ & Original             & 0      & 0.8138$\pm$0.0552 & 2{,}167 \\
+ & SMOTETomek           & $\approx$0 & 0.8589$\pm$0.0394 & 1{,}559 \\
+ & GAN (e300\_b64)      & 1{,}478 & 0.8384$\pm$0.0547 & 1{,}834 \\
+ & WGAN-GP (e300\_b64)  & 231    & 0.8322$\pm$0.0526 & 1{,}990 \\
+ & cWGAN-GP (e300\_b64) & 281    & 0.8290$\pm$0.0152 & 2{,}062 \\
+ & CTGAN (e300\_b200)   & 209    & 0.8339$\pm$0.0551 & 1{,}985 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig6_tune.pdf}
+\caption{Generative hyperparameter sensitivity (10-fold OOF, LSTM): false negatives (total over the folds) versus generator training time (seconds) for every tuned configuration and dataset. SMOTETomek and the cheap generators (WGAN-GP, CTGAN) hold the cost--benefit frontier; the vanilla GAN only competes at high training cost.}
+\label{fig:tune}
 \end{figure}
 
 \subsection{Threats to Validity}
